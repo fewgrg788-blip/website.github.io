@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuildTech Engineering Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1200px; margin: auto; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 25px; text-align: center; }
+        .status-box { padding: 15px; border-radius: 8px; font-weight: bold; font-size: 1.2rem; margin: 15px 0; }
+        .safe { background: #23863622; color: #3fb950; border: 1px solid #238636; }
+        .warning { background: #da363322; color: #f85149; border: 1px solid #da3633; }
+        .score { font-size: 3.5rem; color: #58a6ff; margin: 10px 0; }
+        .sensor-val { color: #8b949e; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: white;">🏗️ BuildTech AI 監測系統</h1>
+    <div class="grid">
+        <div class="card">
+            <h3>GNN 風險預測結果</h3>
+            <div id="ai_score" class="score">---</div>
+            <div id="ai_status" class="status-box">連接中...</div>
+            <p id="ai_time">最後運算時間: --:--:--</p>
+        </div>
+
+        <div class="card">
+            <h3>現場即時數據</h3>
+            <p>MQ-135 (Gas): <span id="s_mq135" style="color:#58a6ff">--</span></p>
+            <p>溫度: <span id="s_temp" style="color:#58a6ff">--</span>°C</p>
+            <p>濕度: <span id="s_hum" style="color:#58a6ff">--</span>%</p>
+            <p class="sensor-val">來源: Firebase Realtime DB</p>
+        </div>
+    </div>
+
+    <script>
+        // 1. Firebase 配置 (直接使用你的 URL)
+        const firebaseConfig = {
+            databaseURL: "https://project-12cc8-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 2. 監聽 AI 分析 (對應你的 56214328 路徑)
+        db.reference('56214328/ai_analysis').on('value', (snap) => {
+            const data = snap.val();
+            if(data) {
+                document.getElementById('ai_score').innerText = data.current_prediction.toFixed(4);
+                const st = document.getElementById('ai_status');
+                st.innerText = data.status;
+                st.className = "status-box " + (data.status === "Warning" ? "warning" : "safe");
+                document.getElementById('ai_time').innerText = "最後運算: " + data.last_calc_time.split('T')[1].substring(0,8);
+            }
+        });
+
+        // 3. 監聽原始感測器數據
+        db.reference('56214328/latest').on('value', (snap) => {
+            const data = snap.val();
+            if(data) {
+                document.getElementById('s_mq135').innerText = data.sensors.mq135.norm;
+                document.getElementById('s_temp').innerText = data.weather.temp;
+                document.getElementById('s_hum').innerText = data.weather.humidity;
+            }
+        });
+    </script>
+</body>
+</html>
