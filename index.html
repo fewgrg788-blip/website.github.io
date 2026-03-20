@@ -3,49 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BuildTech AI History Dashboard</title>
+    <title>BuildTech Multi-Graph Dashboard</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        :root { --bg: #0d1117; --card: #161b22; --blue: #58a6ff; --text: #c9d1d9; --border: #30363d; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
-        .container { max-width: 1100px; margin: auto; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        :root { --bg: #0d1117; --card: #161b22; --blue: #58a6ff; --green: #3fb950; --text: #c9d1d9; --border: #30363d; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .container { max-width: 1200px; margin: auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-top: 20px; }
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
         .full-width { grid-column: 1 / -1; }
-        h1, h3 { text-align: center; color: white; }
-        .big-val { font-size: 3rem; font-weight: bold; color: var(--blue); text-align: center; }
-        .status-badge { text-align: center; padding: 5px; border-radius: 5px; margin-top: 10px; font-weight: bold; border: 1px solid; }
-        .safe { color: #3fb950; border-color: #238636; }
-        .warn { color: #f85149; border-color: #da3633; }
-        canvas { width: 100% !important; height: 300px !important; }
+        h1, h3 { text-align: center; color: white; margin-bottom: 20px; }
+        .big-val { font-size: 2.5rem; font-weight: bold; color: var(--blue); text-align: center; }
+        canvas { width: 100% !important; height: 250px !important; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🏗️ BuildTech AI Analytics</h1>
+    <h1>🏗️ BuildTech Multi-Graph Analytics</h1>
 
     <div class="grid">
         <div class="card">
-            <h3>Current Risk Level (GNN)</h3>
+            <h3>AI Prediction History</h3>
             <div id="ai_score" class="big-val">---</div>
-            <div id="ai_status" class="status-badge">Connecting...</div>
+            <canvas id="aiChart"></canvas>
         </div>
 
         <div class="card">
-            <h3>Live Sensors</h3>
-            <p>MQ-135: <span id="s_mq135" style="color:var(--blue)">--</span></p>
-            <p>Temp: <span id="s_temp" style="color:var(--blue)">--</span>°C</p>
-            <p>Hum: <span id="s_hum" style="color:var(--blue)">--</span>%</p>
-        </div>
-
-        <div class="card full-width">
-            <h3>AI Prediction History (Last 20 updates)</h3>
-            <canvas id="historyChart"></canvas>
+            <h3>Environmental: Temp & Hum</h3>
+            <div style="text-align:center; margin-bottom:10px;">
+                Temp: <span id="s_temp" style="color:var(--blue)">--</span>°C | 
+                Hum: <span id="s_hum" style="color:var(--green)">--</span>%
+            </div>
+            <canvas id="envChart"></canvas>
         </div>
     </div>
 </div>
@@ -56,72 +50,82 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- 2. Chart.js 初始化 ---
-    const ctx = document.getElementById('historyChart').getContext('2d');
-    const historyChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [], // 時間標籤
-            datasets: [{
-                label: 'GNN Risk Score',
-                data: [], // 數值數據
-                borderColor: '#58a6ff',
-                backgroundColor: 'rgba(88, 166, 255, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3 // 曲線平滑度
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true, grid: { color: '#30363d' } },
-                x: { grid: { display: false } }
-            },
-            plugins: { legend: { labels: { color: '#c9d1d9' } } }
-        }
+    const MAX_POINTS = 20;
+
+    // --- 2. 圖表初始化函數 ---
+    function createChart(id, label, color, minVal, maxVal) {
+        const ctx = document.getElementById(id).getContext('2d');
+        return new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: label, data: [], borderColor: color, backgroundColor: color + '22', fill: true, tension: 0.4 }] },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { 
+                        min: minVal, 
+                        max: maxVal, 
+                        grid: { color: '#30363d' },
+                        ticks: { color: '#8b949e' }
+                    },
+                    x: { grid: { display: false }, ticks: { color: '#8b949e' } }
+                },
+                plugins: { legend: { labels: { color: '#c9d1d9' } } }
+            }
+        });
+    }
+
+    // 建立 AI 圖表 (自動縮放，顯示 0 到 2 的範圍比較清楚)
+    const aiChart = createChart('aiChart', 'GNN Risk Score', '#58a6ff', 0, 2);
+
+    // 建立環境圖表 (鎖定 17 到 18 範圍)
+    const envChart = createChart('envChart', 'Temperature (°C)', '#58a6ff', 17, 18);
+    // 為環境圖表增加「濕度」數據集
+    envChart.data.datasets.push({
+        label: 'Humidity (%)',
+        data: [],
+        borderColor: '#3fb950',
+        backgroundColor: 'rgba(63, 185, 80, 0.1)',
+        fill: true,
+        tension: 0.4
     });
 
-    // --- 3. 數據更新邏輯 ---
-    const MAX_DATA_POINTS = 20; // 顯示最近 20 筆
+    // --- 3. 數據監聽與更新 ---
+    function updateChartData(chart, label, newValue, datasetIndex = 0) {
+        if(chart.data.labels.length >= MAX_POINTS) {
+            if(datasetIndex === 0) chart.data.labels.shift();
+            chart.data.datasets[datasetIndex].data.shift();
+        }
+        if(datasetIndex === 0) chart.data.labels.push(label);
+        chart.data.datasets[datasetIndex].data.push(newValue);
+        chart.update('none'); // 'none' 模式更新更快，不卡頓
+    }
 
+    // 監聽 AI 數據
     db.ref('56214328/ai_analysis').on('value', (snap) => {
         const data = snap.val();
         if(data) {
-            // 更新卡片
             const score = data.current_prediction;
             document.getElementById('ai_score').innerText = score.toFixed(4);
-            const st = document.getElementById('ai_status');
-            st.innerText = data.status;
-            st.className = "status-badge " + (data.status === "Warning" ? "warn" : "safe");
-
-            // 更新圖表歷史記錄
-            const now = new Date();
-            const timeLabel = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
-
-            // 如果數據超過上限，刪除最舊的一筆
-            if(historyChart.data.labels.length >= MAX_DATA_POINTS) {
-                historyChart.data.labels.shift();
-                historyChart.data.datasets[0].data.shift();
-            }
-
-            // 推入新數據
-            historyChart.data.labels.push(timeLabel);
-            historyChart.data.datasets[0].data.push(score);
-            historyChart.update();
+            const time = new Date().toLocaleTimeString().split(' ')[0];
+            updateChartData(aiChart, time, score);
         }
     });
 
-    // 監聽原始感測器數據
+    // 監聽感測器數據
     db.ref('56214328/latest').on('value', (snap) => {
         const d = snap.val();
-        if(d) {
-            document.getElementById('s_mq135').innerText = d.sensors.mq135.norm;
-            document.getElementById('s_temp').innerText = d.weather.temp;
-            document.getElementById('s_hum').innerText = d.weather.humidity;
+        if(d && d.weather) {
+            const t = d.weather.temp;
+            const h = d.weather.humidity;
+            document.getElementById('s_temp').innerText = t;
+            document.getElementById('s_hum').innerText = h;
+            
+            const time = new Date().toLocaleTimeString().split(' ')[0];
+            // 同時更新溫度的數據集 (0) 和濕度的數據集 (1)
+            updateChartData(envChart, time, t, 0);
+            updateChartData(envChart, time, h, 1);
         }
     });
 </script>
-
 </body>
 </html>
