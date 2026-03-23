@@ -107,7 +107,7 @@
     const aiChart = new Chart(aiCtx, {
         type: 'line',
         data: { labels: [], datasets: [{ label: 'Risk Score', data: [], borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.1)', fill: true, tension: 0.4 }] },
-        options: commonOptions(17, 18) // 鎖定 AI 預測範圍 17-18
+        options: commonOptions(12, 18) // 鎖定 AI 預測範圍 12-18
     });
 
     const envCtx = document.getElementById('envChart').getContext('2d');
