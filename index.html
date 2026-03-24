@@ -1,34 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuildTech Smart Monitor</title>
+   
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root { 
+            --bg: #0d1117; 
+            --card: #161b22; 
+            --blue: #58a6ff; 
+            --green: #3fb950; 
+            --text: #c9d1d9; 
+            --border: #30363d; 
+        }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            overflow-x: hidden; 
+        }
+       
+        .page { 
+            display: none; 
+            padding: 20px; 
+            min-height: 100vh; 
+            animation: fadeIn 0.5s ease; 
+        }
+        .active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .container { max-width: 1000px; margin: auto; }
+        .card { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 12px; 
+            padding: 30px; 
+            margin-bottom: 20px; 
+            text-align: center; 
+        }
+       
+        .status-hero { 
+            font-size: 4rem; 
+            font-weight: bold; 
+            color: var(--blue); 
+            margin: 20px 0; 
+        }
+        .info-text { 
+            font-size: 1.2rem; 
+            line-height: 1.8; 
+            margin: 20px 0; 
+            color: #8b949e; 
+        }
+       
+        .btn-next { 
+            background: var(--blue); 
+            color: white; 
+            border: none; 
+            padding: 15px 40px; 
+            border-radius: 30px; 
+            font-size: 1.1rem; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+        .btn-next:hover { 
+            background: #1f6feb; 
+            transform: scale(1.05); 
+        }
+        
+        canvas { 
+            width: 100% !important; 
+            height: 320px !important; 
+        }
+    </style>
+</head>
+<body>
+
+<div id="page1" class="page active">
+    <div class="container">
+        <header style="text-align: center; margin-top: 50px;">
+            <h1>🏗️ BuildTech 系統狀態摘要</h1>
+        </header>
+       
+        <div class="card">
+            <div class="info-text">
+                根據最新的 GNN 深度學習分析，當前的結構風險指數為：
+            </div>
+            <div id="hero_score" class="status-hero">---</div>
+            <div id="hero_status" style="font-size: 1.5rem; font-weight: bold;">等待數據連線...</div>
+           
+            <div class="info-text" style="text-align: left; background: #0d1117; padding: 20px; border-radius: 8px;">
+                <strong>當前環境簡報：</strong><br>
+                • 現場溫度：<span id="text_temp">--</span>°C<br>
+                • 環境濕度：<span id="text_hum">--</span>%<br>
+                • 氣體監測：<span id="text_mq">--</span> (MQ-135)<br>
+                • 系統最後更新：<span id="text_time">--</span>
+            </div>
+            <button class="btn-next" onclick="showPage(2)">查看歷史趨勢圖表 →</button>
+        </div>
+    </div>
+</div>
+
+<div id="page2" class="page">
+    <div class="container">
+        <button style="background:none; border:1px solid var(--border); color:var(--text); padding:5px 15px; border-radius:5px; cursor:pointer;" onclick="showPage(1)">← 返回摘要</button>
+        <h1 style="text-align: center;">📊 歷史趨勢詳細數據</h1>
+        
+        <div class="card">
+            <h3>AI Prediction History (GNN Score)</h3>
+            <p style="color: #8b949e; font-size: 0.8rem;">Y-Axis Locked: 12.0 – 18.0（每 1 單位刻度）</p>
+            <canvas id="aiChart"></canvas>
+        </div>
+        
+        <div class="card">
+            <h3>Environment Trend (Temp & Hum)</h3>
+            <p style="color: #8b949e; font-size: 0.8rem;">Y-Axis Range: 0 – 100</p>
+            <canvas id="envChart"></canvas>
+        </div>
+    </div>
+</div>
+
 <script>
-    // --- 頁面切換邏輯 ---
+    // 頁面切換
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page' + pageId).classList.add('active');
         window.scrollTo(0,0);
     }
 
-    // --- Firebase 配置 ---
+    // Firebase 初始化
     const firebaseConfig = { 
         databaseURL: "https://project-12cc8-default-rtdb.asia-southeast1.firebasedatabase.app" 
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- 圖表共用設定 ---
-    const commonOptions = (suggestedMin, suggestedMax, stepSize = 1) => ({
+    // 圖表共用設定
+    const commonOptions = (minVal, maxVal, step) => ({
         responsive: true,
         maintainAspectRatio: false,
         scales: {
             y: { 
-                suggestedMin: suggestedMin,
-                suggestedMax: suggestedMax,
-                min: suggestedMin,
-                max: suggestedMax,
+                min: minVal,
+                max: maxVal,
                 ticks: { 
-                    stepSize: stepSize, 
+                    stepSize: step, 
                     color: '#8b949e' 
                 },
                 grid: { color: '#30363d' },
-                beginAtZero: false   // 重要：不要從 0 開始，避免壓縮 12-18 範圍
+                beginAtZero: false
             },
             x: { 
                 grid: { display: false }, 
@@ -38,30 +163,32 @@
         plugins: { 
             legend: { labels: { color: '#c9d1d9' } } 
         },
-        animation: { duration: 0 }  // 關閉動畫，讓更新更即時
+        animation: { duration: 0 }
     });
 
-    // --- AI 風險分數圖表 (固定 12–18) ---
+    // AI 風險分數圖表（鎖定 12.0 ~ 18.0）
     const aiCtx = document.getElementById('aiChart').getContext('2d');
     const aiChart = new Chart(aiCtx, {
         type: 'line',
         data: { 
             labels: [], 
             datasets: [{ 
-                label: 'GNN Risk Score', 
+                label: 'Risk Score', 
                 data: [], 
                 borderColor: '#58a6ff', 
                 backgroundColor: 'rgba(88,166,255,0.12)', 
                 fill: true, 
                 tension: 0.4,
-                pointRadius: 3,
-                pointBackgroundColor: '#58a6ff'
+                pointRadius: 4,
+                pointBackgroundColor: '#58a6ff',
+                pointBorderColor: '#0d1117',
+                pointBorderWidth: 2
             }] 
         },
-        options: commonOptions(12, 18, 1)  // Y 軸 12–18，每 1 單位一格
+        options: commonOptions(12.0, 18.0, 1)   // 改成 12–18，每 1 單位一格
     });
 
-    // --- 環境溫濕度圖表 (0–100) ---
+    // 環境溫濕度圖表（不變）
     const envCtx = document.getElementById('envChart').getContext('2d');
     const envChart = new Chart(envCtx, {
         type: 'line',
@@ -73,7 +200,7 @@
                     data: [], 
                     borderColor: '#58a6ff', 
                     tension: 0.4,
-                    pointRadius: 3,
+                    pointRadius: 4,
                     pointBackgroundColor: '#58a6ff'
                 },
                 { 
@@ -81,31 +208,29 @@
                     data: [], 
                     borderColor: '#3fb950', 
                     tension: 0.4,
-                    pointRadius: 3,
+                    pointRadius: 4,
                     pointBackgroundColor: '#3fb950'
                 }
             ]
         },
-        options: commonOptions(0, 100, 10)  // 每 10 單位一格
+        options: commonOptions(0, 100, 10)
     });
 
-    // --- 數據監聽 ---
+    // 數據監聽 - AI 分析
     const MAX_POINTS = 20;
-
-    // AI 分析監聽
     db.ref('56214328/ai_analysis').on('value', snap => {
         const d = snap.val();
         if (d && typeof d.current_prediction === 'number') {
             const score = d.current_prediction;
 
-            // 第一頁更新
+            // 第一頁顯示
             document.getElementById('hero_score').innerText = score.toFixed(4);
-            document.getElementById('hero_status').innerText = d.status || 'Normal';
+            const statusText = d.status || (score > 16 ? 'Warning' : 'Normal');
+            document.getElementById('hero_status').innerText = statusText;
             document.getElementById('hero_status').style.color = 
-                (d.status === "Warning" || score > 16) ? "#f85149" : 
-                (score > 14) ? "#ffa500" : "#3fb950";
+                (statusText === 'Warning' || score > 16) ? '#f85149' : '#3fb950';
 
-            // 第二頁圖表更新
+            // 圖表更新
             const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             if (aiChart.data.labels.length >= MAX_POINTS) {
                 aiChart.data.labels.shift();
@@ -117,21 +242,21 @@
         }
     });
 
-    // 最新環境數據監聽
+    // 數據監聽 - 最新環境數據
     db.ref('56214328/latest').on('value', snap => {
         const d = snap.val();
-        if (d && d.weather && d.sensors) {
+        if (d && d.weather && d.sensors && d.sensors.mq135) {
             const t = d.weather.temp;
             const h = d.weather.humidity;
             const mq = d.sensors.mq135.norm;
 
-            // 第一頁文字更新
+            // 第一頁文字
             document.getElementById('text_temp').innerText = t.toFixed(1);
             document.getElementById('text_hum').innerText = h.toFixed(1);
             document.getElementById('text_mq').innerText = mq.toFixed(4);
-            document.getElementById('text_time').innerText = new Date(d.timestamp * 1000).toLocaleTimeString();
+            document.getElementById('text_time').innerText = new Date(d.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
 
-            // 第二頁圖表更新
+            // 環境圖表更新
             const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             if (envChart.data.labels.length >= MAX_POINTS) {
                 envChart.data.labels.shift();
@@ -145,3 +270,5 @@
         }
     });
 </script>
+</body>
+</html>
