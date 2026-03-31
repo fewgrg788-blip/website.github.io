@@ -50,7 +50,7 @@
     <div class="container">
         <header style="text-align: center; margin-top: 20px;"><h1>🏗️ BuildTech 智能監控摘要</h1></header>
         <div class="card">
-            <p>GNN 結構風險預測指數</p>
+            <p>LAN 實時結構風險預測指數</p>
             <div id="hero_score" class="status-hero">---</div>
             <div id="hero_status" style="font-size: 1.2rem; font-weight: bold;">等待數據...</div>
            
@@ -64,7 +64,7 @@
             </div>
             <div class="btn-group">
                 <button class="btn" onclick="showPage(3)">🗺️ 3D 數位分身</button>
-                <button class="btn btn-outline" onclick="showPage(2)">📊 趨勢圖表</button>
+                <button class="btn btn-outline" onclick="showPage(2)">📊 綜合趨勢圖表</button>
             </div>
         </div>
     </div>
@@ -73,8 +73,14 @@
 <div id="page2" class="page">
     <div class="container">
         <button class="btn btn-outline" onclick="showPage(1)">← 返回摘要</button>
-        <div class="card"><h4>GNN Risk Prediction History</h4><div style="height: 250px;"><canvas id="aiChart"></canvas></div></div>
-        <div class="card"><h4>Environment (Temp/Hum) Trend</h4><div style="height: 250px;"><canvas id="envChart"></canvas></div></div>
+        
+        <div class="card">
+            <h4>🗺️ 18區 AQHI: 實時 vs 6小時 AI 預測 (WAN)</h4>
+            <div style="height: 300px;"><canvas id="wanChart"></canvas></div>
+        </div>
+
+        <div class="card"><h4>LAN 實時風險預測歷史</h4><div style="height: 250px;"><canvas id="aiChart"></canvas></div></div>
+        <div class="card"><h4>LAN 環境 (溫濕度) 趨勢</h4><div style="height: 250px;"><canvas id="envChart"></canvas></div></div>
     </div>
 </div>
 
@@ -96,10 +102,12 @@
 </div>
 
 <script>
-    // ==================== 1. Firebase & Cesium 初始化 ====================
+    // ==================== 1. Firebase 初始化 ====================
     const firebaseConfig = { databaseURL: "https://project-12cc8-default-rtdb.asia-southeast1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    
+    // Cesium Token
     Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4Y2VjODU4MC0zMTU2LTQwYTktYTdjYi1kMGNiN2QwMzY4YWQiLCJpZCI6NDA4MjM2LCJpYXQiOjE3NzQzMzQ2ODJ9.ONn3b4v-wb1_SfpQ-aRomRX3qajSLBWwbcwj28wMZsI';
 
     let viewer, stationEntities = {};
@@ -110,7 +118,7 @@
         if (pageId === 3 && !viewer) setTimeout(initCesium, 300);
     }
 
-    // ==================== 2. 18 個監測站 + 實時 AQHI ====================
+    // ==================== 2. Cesium 相關邏輯 (保持不變) ====================
     const stations = [
         { name: "中西區", englishKey: "Central/Western", lon: 114.1461, lat: 22.2859 },
         { name: "南區", englishKey: "Southern", lon: 114.1593, lat: 22.2471 },
@@ -177,7 +185,6 @@
         }
     }
 
-    // ==================== 3. Cesium 初始化（只改右鍵旋轉）===================
     async function initCesium() {
         viewer = new Cesium.Viewer('cesiumContainer', {
             terrainProvider: await Cesium.createWorldTerrainAsync(),
@@ -186,16 +193,10 @@
         });
 
         viewer.scene.primitives.add(await Cesium.createOsmBuildingsAsync());
-
-        // ==================== 【只改這一段】 ====================
         const ctrl = viewer.scene.screenSpaceCameraController;
-        ctrl.enableLook = false;                    // 防止自由漂移
-        ctrl.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG];   // 右鍵按住拖曳 = whirl perspective
+        ctrl.enableLook = false;                   
+        ctrl.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG];   
 
-        // 左鍵拖曳 和 滑鼠滾輪 維持原本行為（平移 + 縮放）
-        // （不需要寫任何東西，它們會自動保持預設）
-
-        // 建立左側選單
         const menu = document.getElementById('location-list');
         stations.forEach(s => {
             const btn = document.createElement('button');
@@ -206,12 +207,49 @@
         });
 
         await fetchAQHI();
-        setInterval(fetchAQHI, 300000);   // 每 5 分鐘自動更新
-
+        setInterval(fetchAQHI, 300000);   
         viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(114.17, 22.33, 25000) });
     }
 
-    // ==================== 4. Firebase 監聽 & 圖表 ====================
+    // ==================== 3. 初始化所有圖表 ====================
+    
+    // [新增] WAN 18區對比圖 (折線圖，兩條線對比)
+    const wanChart = new Chart(document.getElementById('wanChart'), {
+        type: 'line',
+        data: {
+            labels: [], 
+            datasets: [
+                { 
+                    label: '實時監測 (Real-time)', 
+                    data: [], 
+                    borderColor: '#58a6ff', 
+                    backgroundColor: 'rgba(88, 166, 255, 0.2)', 
+                    borderWidth: 2, 
+                    fill: true, 
+                    tension: 0.3 
+                },
+                { 
+                    label: 'AI 6小時預測 (Simulated)', 
+                    data: [], 
+                    borderColor: '#f85149', 
+                    borderDash: [5, 5], // 虛線表示預測
+                    backgroundColor: 'transparent', 
+                    borderWidth: 2, 
+                    tension: 0.3 
+                }
+            ]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 } },
+                y: { title: { display: true, text: 'AQHI Value' } }
+            }
+        }
+    });
+
+    // 原本的 LAN 圖表
     const aiChart = new Chart(document.getElementById('aiChart'), {
         type: 'line', data: { labels: [], datasets: [{ label: 'Risk Score', data: [], borderColor: '#58a6ff', tension: 0.4 }] },
         options: { responsive: true, maintainAspectRatio: false }
@@ -222,6 +260,30 @@
         options: { responsive: true, maintainAspectRatio: false }
     });
 
+    // ==================== 4. Firebase 監聽器 ====================
+
+    // [新增] 監聽 WAN 數據 (GAGNN_24hours) 更新對比圖
+    db.ref('GAGNN_24hours').on('value', snap => {
+        const data = snap.val();
+        if (data && data.GAGNN_data && data.wan_ai_analysis) {
+            const realTimeData = data.GAGNN_data.readings || {};
+            const simData = data.wan_ai_analysis.simulated_18_districts || {};
+
+            // 整理標籤名稱，去掉 _General 和 _Roadside 讓圖表更簡潔
+            const labels = Object.keys(realTimeData).map(k => k.replace(/_General|_Roadside/g, '').replace(/_/g, ' '));
+            
+            // 提取兩組數值
+            const realValues = Object.keys(realTimeData).map(k => parseFloat(realTimeData[k]));
+            const simValues = Object.keys(realTimeData).map(k => simData[k] || 0);
+
+            wanChart.data.labels = labels;
+            wanChart.data.datasets[0].data = realValues;
+            wanChart.data.datasets[1].data = simValues;
+            wanChart.update();
+        }
+    });
+
+    // 原本的 LAN AI 分析監聽
     db.ref('56214328/ai_analysis').on('value', snap => {
         const d = snap.val();
         if (d) {
@@ -237,22 +299,17 @@
         }
     });
 
-db.ref('56214328/latest').on('value', snap => {
+    // 原本的 LAN 傳感器實時數據監聽
+    db.ref('56214328/latest').on('value', snap => {
         const d = snap.val();
         if (d && d.weather) {
             document.getElementById('text_temp').innerText = d.weather.temp.toFixed(1);
             document.getElementById('text_hum').innerText = d.weather.humidity.toFixed(1);
-            
-            // MQ135（你原本就有）
             document.getElementById('text_mq135').innerText = d.sensors?.mq135?.norm?.toFixed(4) || '--';
-            
-            // 新增 MQ2 和 MQ7（如果你上傳到 Firebase 的路徑不同，請告訴我，我再改）
             document.getElementById('text_mq2').innerText = d.sensors?.mq2?.norm?.toFixed(4) || '--';
             document.getElementById('text_mq7').innerText = d.sensors?.mq7?.norm?.toFixed(4) || '--';
-
             document.getElementById('text_time').innerText = new Date(d.timestamp * 1000).toLocaleTimeString();
             
-            // 圖表更新（不變）
             const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
             if (envChart.data.labels.length > 20) { envChart.data.labels.shift(); envChart.data.datasets[0].data.shift(); envChart.data.datasets[1].data.shift(); }
             envChart.data.labels.push(time);
