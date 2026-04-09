@@ -232,27 +232,45 @@
     });
 
     // 監聽 GNN 預測數據 (從 GAGNN_v2 獲取最新的預測路徑)
+// ==================== 修改後的紅色曲線監聽邏輯 ====================
+    // 確保預測數據與實時數據的站點順序完全一致
+    const stationOrder = [
+        'Central_Western_General', 'Eastern_General', 'Kwun_Tong_General', 'Sham_Shui_Po_General',
+        'Kwai_Chung_General', 'Tsuen_Wan_General', 'Tseung_Kwan_O_General', 'Yuen_Long_General',
+        'Tuen_Mun_General', 'Tung_Chung_General', 'Tai_Po_General', 'Sha_Tin_General',
+        'North_General', 'Tap_Mun_General', 'Causeway_Bay_Roadside', 'Central_Roadside',
+        'Mong_Kok_Roadside', 'Southern_General'
+    ];
+
     db.ref('GAGNN_v2/predictions').orderByKey().limitToLast(1).on('value', snap => {
         const predictions = snap.val();
         if (predictions) {
-            // 獲取時間 Key (例如 "2026-04-09 23:00")
+            // 1. 獲取最新的一個時間節點 (例如 "2026-04-09 23:00")
             const timeKey = Object.keys(predictions)[0];
             const predData = predictions[timeKey];
             
-            console.log("Loading predictions for:", timeKey);
-    
-            // 更新圖表：將預測數值存入 datasets[1]
-            // 注意：Object.values 會按照字母順序排列站點數據，
-            // 確保你的 Python 寫入順序與 STATIONS 列表一致
-            wanChart.data.datasets[1].data = Object.values(predData);
+            console.log("📈 Updating red curve with prediction for:", timeKey);
+
+            // 2. 依照標準順序提取數值，防止圖表 X 軸錯位
+            const orderedValues = stationOrder.map(key => predData[key] || 0);
+
+            // 3. 更新圖表紅線 (datasets[1])
+            wanChart.data.datasets[1].label = `GNN 預測 (${timeKey.split(' ')[1]})`;
+            wanChart.data.datasets[1].data = orderedValues;
             wanChart.update();
             
-            // 可選：更新警報條顯示 (根據預測平均值判定)
-            const avg = Object.values(predData).reduce((a, b) => a + b, 0) / 18;
-            document.getElementById('alert-banner').style.display = avg > 4.5 ? 'block' : 'none';
-            if (avg > 4.5) document.getElementById('alert-banner').innerText = `🚨 GNN 警告：${timeKey} 預測風險偏高`;
+            // 4. 更新警告橫幅 (以預測平均值為準)
+            const avg = orderedValues.reduce((a, b) => a + b, 0) / orderedValues.length;
+            const banner = document.getElementById('alert-banner');
+            if (avg > 4.2) {
+                banner.style.display = 'block';
+                banner.innerText = `🚨 GNN 警告：預計 ${timeKey.split(' ')[1]} 全港 AQHI 將上升至 ${avg.toFixed(1)} 級`;
+            } else {
+                banner.style.display = 'none';
+            }
         }
     });
+    // =============================================================
 
     db.ref('GAGNN_24hours/GAGNN_data/readings').on('value', snap => {
         const readings = snap.val();
