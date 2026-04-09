@@ -17,32 +17,20 @@
             --green: #3fb950; --red: #f85149; --text: #c9d1d9; --border: #30363d;
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; }
-        
         #alert-banner { display: none; background: var(--red); color: white; text-align: center; padding: 8px; font-weight: bold; position: fixed; width: 100%; z-index: 9999; }
-
         .page { display: none; padding: 20px; height: 100vh; animation: fadeIn 0.4s ease; box-sizing: border-box; overflow-y: auto; }
         .active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-       
         .container { max-width: 1200px; margin: auto; display: flex; flex-direction: column; gap: 15px; }
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-align: center; backdrop-filter: blur(10px); }
-       
         .status-hero { font-size: 3.5rem; font-weight: bold; color: var(--blue); margin: 10px 0; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin: 15px 0; font-size: 0.9rem; }
-       
         .btn-group { display: flex; gap: 10px; justify-content: center; }
         .btn { background: var(--blue); color: white; border: none; padding: 12px 24px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn:hover { transform: scale(1.02); filter: brightness(1.1); }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-
         #cesiumContainer { width: 100%; height: 68vh; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
-        
-        .nav-menu {
-            position: absolute; top: 15px; left: 15px; z-index: 10;
-            background: rgba(22, 27, 34, 0.9); border: 1px solid var(--border);
-            padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px;
-            max-height: 55vh; overflow-y: auto; width: 160px;
-        }
+        .nav-menu { position: absolute; top: 15px; left: 15px; z-index: 10; background: rgba(22, 27, 34, 0.9); border: 1px solid var(--border); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; max-height: 55vh; overflow-y: auto; width: 160px; }
         .nav-btn { background: #21262d; color: var(--text); border: 1px solid var(--border); padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; text-align: left; }
         .nav-btn:hover { background: var(--blue); color: white; }
     </style>
@@ -58,7 +46,6 @@
             <p>LAN 實時結構風險預測指數</p>
             <div id="hero_score" class="status-hero">---</div>
             <div id="hero_status" style="font-size: 1.2rem; font-weight: bold;">數據連接中...</div>
-            
             <div class="info-grid">
                 <div>🌡️ 溫度：<span id="text_temp">--</span>°C</div>
                 <div>💧 濕度：<span id="text_hum">--</span>%</div>
@@ -101,7 +88,7 @@
 </div>
 
 <script>
-    // ==================== 1. 初始化 ====================
+    // --- 1. 全局配置與函數定義 ---
     const firebaseConfig = { databaseURL: "https://project-12cc8-default-rtdb.asia-southeast1.firebasedatabase.app" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -111,7 +98,7 @@
     let viewer = null;
     let stationEntities = {};
 
-    // 唯一的標準排序 - 確保藍紅兩線永遠對齊
+    // 唯一標準排序 - 確保全域只有一個宣告
     const masterStationOrder = [
         'Causeway_Bay_Roadside', 'Central_Roadside', 'Central_Western_General', 'Eastern_General',
         'Kwai_Chung_General', 'Kwun_Tong_General', 'Mong_Kok_Roadside', 'North_General',
@@ -120,13 +107,14 @@
         'Tung_Chung_General', 'Yuen_Long_General'
     ];
 
+    // 頁面切換函數 (放在最前面)
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('page' + pageId).classList.add('active');
         if (pageId === 3 && !viewer) setTimeout(initCesium, 200);
     }
 
-    // ==================== 2. 3D 地圖 ====================
+    // --- 2. Cesium 3D 地圖實作 ---
     const stations = [
         { name: "中西區", englishKey: "Central/Western", lon: 114.1461, lat: 22.2859 },
         { name: "南區", englishKey: "Southern", lon: 114.1593, lat: 22.2471 },
@@ -156,9 +144,7 @@
             timeline: false, animation: false, infoBox: false, selectionIndicator: false
         });
         viewer.scene.primitives.add(await Cesium.createOsmBuildingsAsync());
-        const ctrl = viewer.scene.screenSpaceCameraController;
-        ctrl.enableLook = false; ctrl.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG];
-
+        
         const menu = document.getElementById('location-list');
         stations.forEach(s => {
             const btn = document.createElement('button');
@@ -186,7 +172,7 @@
             });
             stations.forEach(s => updateStationMarker(s, aqhiData[s.englishKey] ?? 3));
             document.getElementById('last_update_time').innerText = `最後更新：${new Date().toLocaleTimeString()}`;
-        } catch (e) { console.error("AQHI Fetch Error"); }
+        } catch (e) { console.error("AQHI Error"); }
     }
 
     function updateStationMarker(s, val) {
@@ -201,7 +187,7 @@
         }
     }
 
-    // ==================== 3. 圖表邏輯 ====================
+    // --- 3. Chart.js 圖表實作 ---
     const wanChart = new Chart(document.getElementById('wanChart'), {
         type: 'line',
         data: { labels: [], datasets: [
@@ -217,43 +203,33 @@
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // 監聽實時數據 (藍線)
+    // 藍線監聽器
     db.ref('GAGNN_24hours/GAGNN_data/readings').on('value', snap => {
         const readings = snap.val();
         if (readings) {
-            // 強制按照 masterStationOrder 排序並簡化標籤
             wanChart.data.labels = masterStationOrder.map(k => k.split('_')[0]);
             wanChart.data.datasets[0].data = masterStationOrder.map(k => readings[k] || 0);
             wanChart.update();
         }
     });
 
-    // 監聽預測數據 (紅線)
+    // 紅線監聽器
     db.ref('GAGNN_v2/predictions').orderByKey().limitToLast(1).on('value', snap => {
         const predictions = snap.val();
         if (predictions) {
             const timeKey = Object.keys(predictions)[0];
             const predData = predictions[timeKey];
-            
-            // 更新紅線數據 (同樣按照 masterStationOrder)
             wanChart.data.datasets[1].label = `GNN 預測 (${timeKey.split(' ')[1]})`;
             wanChart.data.datasets[1].data = masterStationOrder.map(k => predData[k] || 0);
             wanChart.update();
 
-            // 警告 banner 邏輯
-            const values = Object.values(predData);
-            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            const avg = Object.values(predData).reduce((a, b) => a + b, 0) / 18;
             const banner = document.getElementById('alert-banner');
-            if (avg > 3.8) {
-                banner.style.display = 'block';
-                banner.innerText = `🚨 GNN 警告：預測 ${timeKey.split(' ')[1]} 風險將升至 ${avg.toFixed(1)} 級`;
-            } else {
-                banner.style.display = 'none';
-            }
+            banner.style.display = avg > 3.8 ? 'block' : 'none';
         }
     });
 
-    // 監聽 LAN 實時數據
+    // LAN 實時數據
     db.ref('56214328/latest').on('value', snap => {
         const d = snap.val();
         if (d) {
