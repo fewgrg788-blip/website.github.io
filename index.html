@@ -4,41 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BuildTech Smart Monitor | Integrated Digital Twin</title>
-
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-
     <style>
         :root {
             --bg: #0d1117; --card: rgba(22, 27, 34, 0.85); --blue: #58a6ff;
             --green: #3fb950; --red: #f85149; --text: #c9d1d9; --border: #30363d;
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; }
-
         /* 頂部警告條 */
         #alert-banner { display: none; background: var(--red); color: white; text-align: center; padding: 8px; font-weight: bold; position: fixed; width: 100%; z-index: 9999; }
-
         .page { display: none; padding: 20px; height: 100vh; animation: fadeIn 0.4s ease; box-sizing: border-box; overflow-y: auto; }
         .active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
         .container { max-width: 1200px; margin: auto; display: flex; flex-direction: column; gap: 15px; }
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-align: center; backdrop-filter: blur(10px); }
-
         .status-hero { font-size: 3.5rem; font-weight: bold; color: var(--blue); margin: 10px 0; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin: 15px 0; font-size: 0.9rem; }
-
         .btn-group { display: flex; gap: 10px; justify-content: center; }
         .btn { background: var(--blue); color: white; border: none; padding: 12px 24px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s; }
         .btn:hover { transform: scale(1.02); filter: brightness(1.1); }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-
         #cesiumContainer { width: 100%; height: 68vh; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
-
-        /* 18區導航選單 (保持你的滑鼠控制與選擇功能) */
+        /* 18區導航選單 */
         .nav-menu {
             position: absolute; top: 15px; left: 15px; z-index: 10;
             background: rgba(22, 27, 34, 0.9); border: 1px solid var(--border);
@@ -50,9 +41,7 @@
     </style>
 </head>
 <body>
-
 <div id="alert-banner">🚨 GNN 警告：偵測到未來區域性空氣風險偏高</div>
-
 <div id="page1" class="page active">
     <div class="container">
         <header style="text-align: center; margin-top: 10px;"><h1>🏗️ BuildTech 智能監控摘要</h1></header>
@@ -60,7 +49,6 @@
             <p>LAN 實時結構風險預測指數</p>
             <div id="hero_score" class="status-hero">---</div>
             <div id="hero_status" style="font-size: 1.2rem; font-weight: bold;">數據連接中...</div>
-
             <div class="info-grid">
                 <div>🌡️ 溫度：<span id="text_temp">--</span>°C</div>
                 <div>💧 濕度：<span id="text_hum">--</span>%</div>
@@ -74,7 +62,6 @@
         </div>
     </div>
 </div>
-
 <div id="page2" class="page">
     <div class="container">
         <button class="btn btn-outline" onclick="showPage(1)">← 返回摘要</button>
@@ -85,7 +72,6 @@
         <div class="card"><h4>LAN 實時風險預測歷史</h4><div style="height: 250px;"><canvas id="aiChart"></canvas></div></div>
     </div>
 </div>
-
 <div id="page3" class="page" style="overflow: hidden;">
     <div class="container" style="height: 100%;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
@@ -124,7 +110,7 @@
     }
 
     // ==================== 2. 18區 3D 地圖 ====================
-    const stations = [ /* 你的 stations 陣列保持不變 */ 
+    const stations = [
         { name: "中西區", englishKey: "Central/Western", lon: 114.1461, lat: 22.2859 },
         { name: "南區", englishKey: "Southern", lon: 114.1593, lat: 22.2471 },
         { name: "東區", englishKey: "Eastern", lon: 114.2201, lat: 22.2842 },
@@ -171,6 +157,41 @@
         viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(114.17, 22.33, 25000) });
     }
 
+    async function fetchAQHI() {
+        const proxy = "https://corsproxy.io/?";
+        const target = "https://www.aqhi.gov.hk/epd/ddata/html/out/aqhi_ind_rss_Eng.xml";
+        try {
+            const res = await fetch(proxy + encodeURIComponent(target));
+            const xmlText = await res.text();
+            const xmlDoc = new DOMParser().parseFromString(xmlText, "text/xml");
+            const items = xmlDoc.querySelectorAll("item");
+            const aqhiData = {};
+            items.forEach(item => {
+                const title = item.querySelector("title").textContent.trim();
+                const match = item.querySelector("description").textContent.match(/:\s*(\d+)/);
+                if (match) aqhiData[title] = parseInt(match[1]);
+            });
+            stations.forEach(s => {
+                const val = aqhiData[s.englishKey] ?? 3;
+                updateStationMarker(s, val);
+            });
+            document.getElementById('last_update_time').innerText = `最後更新：${new Date().toLocaleTimeString()}`;
+        } catch (e) { console.error("AQHI Fetch Error"); }
+    }
+
+    function updateStationMarker(s, val) {
+        const color = val >= 7 ? Cesium.Color.RED : (val >= 4 ? Cesium.Color.GOLD : Cesium.Color.SPRINGGREEN);
+        if (stationEntities[s.name]) {
+            stationEntities[s.name].ellipsoid.material = color.withAlpha(0.6);
+        } else if (viewer) {
+            stationEntities[s.name] = viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(s.lon, s.lat, 100),
+                ellipsoid: { radii: new Cesium.Cartesian3(70,70,70), material: color.withAlpha(0.6) },
+                label: { text: `${s.name}\nAQHI: ${val}`, font: '11pt sans-serif', pixelOffset: new Cesium.Cartesian2(0, -70) }
+            });
+        }
+    }
+
     // ==================== 3. 圖表 ====================
     const wanChart = new Chart(document.getElementById('wanChart'), {
         type: 'line',
@@ -184,20 +205,22 @@
         options: { 
             responsive: true, 
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'top' } }
+            plugins: { legend: { position: 'top' } },
+            scales: {
+                x: { ticks: { maxRotation: 45, minRotation: 45 } }
+            }
         }
     });
 
-    const aiChart = new Chart(document.getElementById('aiChart'), { /* 你的 aiChart 保持不變 */ 
+    const aiChart = new Chart(document.getElementById('aiChart'), {
         type: 'line',
         data: { labels: [], datasets: [{ label: 'Risk Score', data: [], borderColor: '#58a6ff', tension: 0.4 }] },
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // ==================== 關鍵修正：統一更新函數 ====================
-// ==================== 關鍵修正：統一更新函數（已改成你指定的英文排序） ====================
+    // ==================== 關鍵修正：統一更新函數（已改成你指定的英文排序） ====================
     function updateWANChart() {
-        // === 你指定的全新排序 + 英文標籤 ===
+        // === 你指定的全新排序 + 完整英文標籤 ===
         const stationOrder = [
             "Causeway_Bay_Roadside",
             "Central_Roadside",
@@ -219,7 +242,7 @@
             "Yuen_Long_General"
         ];
 
-        // X軸直接使用英文 key（你想要的樣子）
+        // X軸直接使用你指定的英文 key
         const orderedLabels = stationOrder;
 
         // 藍線資料（實時）
@@ -238,7 +261,7 @@
         wanChart.update();
     }
 
-    // ==================== Firebase 監聽（藍線） ====================
+    // ==================== Firebase 監聽（藍線 - 實時） ====================
     db.ref('GAGNN_24hours/GAGNN_data/readings').on('value', snap => {
         const readings = snap.val();
         if (readings) {
@@ -248,7 +271,7 @@
         }
     });
 
-    // ==================== Firebase 監聽（紅線） ====================
+    // ==================== Firebase 監聽（紅線 - GNN 6h 預測） ====================
     db.ref('GAGNN_v2/predictions').orderByKey().limitToLast(1).on('value', snap => {
         const predictions = snap.val();
         if (predictions) {
@@ -274,10 +297,34 @@
         }
     });
 
-    // 其他 Firebase 監聽（LAN、AI 預測）保持不變
-    db.ref('56214328/latest').on('value', snap => { /* ... */ });
-    db.ref('56214328/ai_analysis/current_prediction').on('value', snap => { /* ... */ });
-    db.ref('GAGNN_v2/dashboard').on('value', snap => { /* ... */ });
+    // ==================== 其他 Firebase 監聽（保持不變） ====================
+    db.ref('GAGNN_v2/dashboard').on('value', snap => {
+        const d = snap.val();
+        if (d) console.log("Dashboard Updated:", d.last_updated);
+    });
+
+    db.ref('56214328/latest').on('value', snap => {
+        const d = snap.val();
+        if (d) {
+            document.getElementById('text_temp').innerText = d.weather?.temp?.toFixed(1) || '--';
+            document.getElementById('text_hum').innerText = d.weather?.humidity?.toFixed(1) || '--';
+            document.getElementById('text_mq135').innerText = d.sensors?.mq135?.norm?.toFixed(3) || '--';
+            document.getElementById('text_time').innerText = new Date().toLocaleTimeString();
+        }
+    });
+
+    db.ref('56214328/ai_analysis/current_prediction').on('value', snap => {
+        const val = snap.val();
+        if (val) {
+            document.getElementById('hero_score').innerText = val.toFixed(2);
+            document.getElementById('hero_status').innerText = val > 16 ? "⚠️ 結構風險偏高" : "✅ 狀態穩定";
+            document.getElementById('hero_status').style.color = val > 16 ? '#f85149' : '#3fb950';
+            const time = new Date().toLocaleTimeString([], {minute:'2-digit', second:'2-digit'});
+            if (aiChart.data.labels.length > 15) { aiChart.data.labels.shift(); aiChart.data.datasets[0].data.shift(); }
+            aiChart.data.labels.push(time); aiChart.data.datasets[0].data.push(val);
+            aiChart.update();
+        }
+    });
 </script>
 </body>
 </html>
