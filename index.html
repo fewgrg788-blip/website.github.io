@@ -204,32 +204,53 @@
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // 監聽實時數據 (藍線) - 依照 stationOrder 排序
+    // 1. 定義一個「絕對標準」的順序 (對齊你的圖表顯示習慣)
+    const stationOrder = [
+        'Causeway_Bay_Roadside',
+        'Central_Roadside',
+        'Central_Western_General',
+        'Eastern_General',
+        'Kwai_Chung_General',
+        'Kwun_Tong_General',
+        'Mong_Kok_Roadside',
+        'North_General',
+        'Sha_Tin_General',
+        'Sham_Shui_Po_General',
+        'Southern_General',
+        'Tai_Po_General',
+        'Tap_Mun_General',
+        'Tseung_Kwan_O_General',
+        'Tsuen_Wan_General',
+        'Tuen_Mun_General',
+        'Tung_Chung_General',
+        'Yuen_Long_General'
+    ];
+    
+    // 2. 更新實時數據 (藍線)
     db.ref('GAGNN_24hours/GAGNN_data/readings').on('value', snap => {
         const readings = snap.val();
         if (readings) {
-            wanChart.data.labels = stationOrder.map(k => k.replace('_General','').replace('_Roadside',''));
+            // 強制 X 軸標籤按照 stationOrder 顯示 (並簡化名稱)
+            wanChart.data.labels = stationOrder.map(k => k.split('_')[0]);
+            // 強制數值按照 stationOrder 提取
             wanChart.data.datasets[0].data = stationOrder.map(k => readings[k] || 0);
             wanChart.update();
         }
     });
-
-    // 監聽預測數據 (紅線) - 依照 stationOrder 排序
+    
+    // 3. 更新預測數據 (紅線)
     db.ref('GAGNN_v2/predictions').orderByKey().limitToLast(1).on('value', snap => {
         const predictions = snap.val();
         if (predictions) {
             const timeKey = Object.keys(predictions)[0];
             const predData = predictions[timeKey];
-            wanChart.data.datasets[1].label = `GNN 預測 (${timeKey.split(' ')[1]})`;
-            wanChart.data.datasets[1].data = stationOrder.map(k => predData[k] || 0);
-            wanChart.update();
             
-            const avg = Object.values(predData).reduce((a,b)=>a+b,0) / 18;
-            const banner = document.getElementById('alert-banner');
-            banner.style.display = avg > 4.1 ? 'block' : 'none';
-            if (avg > 4.1) banner.innerText = `🚨 GNN 警告：預計 ${timeKey.split(' ')[1]} 全港風險將升至 ${avg.toFixed(1)} 級`;
-        }
-    });
+        // 標籤已經由藍線監聽器建立，這裡只需要確保 Data 順序一致
+        wanChart.data.datasets[1].label = `GNN 預測 (${timeKey.split(' ')[1]})`;
+        wanChart.data.datasets[1].data = stationOrder.map(k => predData[k] || 0);
+        wanChart.update();
+    }
+});
 
     // LAN 實時數據
     db.ref('56214328/latest').on('value', snap => {
