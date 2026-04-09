@@ -272,11 +272,16 @@
     });
     // =============================================================
 
+    // 尋找並修改這一段：實時數據監聽 (藍線)
     db.ref('GAGNN_24hours/GAGNN_data/readings').on('value', snap => {
         const readings = snap.val();
         if (readings) {
-            wanChart.data.labels = Object.keys(readings).map(k => k.split('_')[0]);
-            wanChart.data.datasets[0].data = Object.values(readings);
+            // 修正點：同樣依照 stationOrder 來提取標籤和數值，確保藍紅兩線完全對齊
+            const orderedLabels = stationOrder.map(k => k.split('_')[0]); // 轉為中文簡稱
+            const orderedValues = stationOrder.map(k => readings[k] || 0);
+
+            wanChart.data.labels = orderedLabels;
+            wanChart.data.datasets[0].data = orderedValues;
             wanChart.update();
         }
     });
