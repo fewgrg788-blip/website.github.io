@@ -195,34 +195,40 @@
     });
 
     // ==================== 關鍵修正：統一更新函數 ====================
+// ==================== 關鍵修正：統一更新函數（已改成你指定的英文排序） ====================
     function updateWANChart() {
+        // === 你指定的全新排序 + 英文標籤 ===
         const stationOrder = [
-            'Central_Western_General', 'Eastern_General', 'Kwun_Tong_General', 'Sham_Shui_Po_General',
-            'Kwai_Chung_General', 'Tsuen_Wan_General', 'Tseung_Kwan_O_General', 'Yuen_Long_General',
-            'Tuen_Mun_General', 'Tung_Chung_General', 'Tai_Po_General', 'Sha_Tin_General',
-            'North_General', 'Tap_Mun_General', 'Causeway_Bay_Roadside', 'Central_Roadside',
-            'Mong_Kok_Roadside', 'Southern_General'
+            "Causeway_Bay_Roadside",
+            "Central_Roadside",
+            "Central_Western_General",
+            "Eastern_General",
+            "Kwai_Chung_General",
+            "Kwun_Tong_General",
+            "Mong_Kok_Roadside",
+            "North_General",
+            "Sha_Tin_General",
+            "Sham_Shui_Po_General",
+            "Southern_General",
+            "Tai_Po_General",
+            "Tap_Mun_General",
+            "Tseung_Kwan_O_General",
+            "Tsuen_Wan_General",
+            "Tuen_Mun_General",
+            "Tung_Chung_General",
+            "Yuen_Long_General"
         ];
 
-        // 固定標籤（使用更清楚的中文顯示）
-        const labelMap = {
-            'Central_Western_General': '中西區', 'Eastern_General': '東區', 'Kwun_Tong_General': '觀塘',
-            'Sham_Shui_Po_General': '深水埗', 'Kwai_Chung_General': '葵涌', 'Tsuen_Wan_General': '荃灣',
-            'Tseung_Kwan_O_General': '將軍澳', 'Yuen_Long_General': '元朗', 'Tuen_Mun_General': '屯門',
-            'Tung_Chung_General': '東涌', 'Tai_Po_General': '大埔', 'Sha_Tin_General': '沙田',
-            'North_General': '北區', 'Tap_Mun_General': '塔門', 'Causeway_Bay_Roadside': '銅鑼灣',
-            'Central_Roadside': '中環', 'Mong_Kok_Roadside': '旺角', 'Southern_General': '南區'
-        };
+        // X軸直接使用英文 key（你想要的樣子）
+        const orderedLabels = stationOrder;
 
-        const orderedLabels = stationOrder.map(k => labelMap[k] || k);
-
-        // 藍線資料
+        // 藍線資料（實時）
         const blueData = stationOrder.map(k => latestReadings[k] !== undefined ? latestReadings[k] : 0);
 
         wanChart.data.labels = orderedLabels;
         wanChart.data.datasets[0].data = blueData;
 
-        // 紅線資料（如果已經有預測）
+        // 紅線資料（GNN 6小時預測）
         if (latestPredictions) {
             const redData = stationOrder.map(k => latestPredictions[k] !== undefined ? latestPredictions[k] : 0);
             wanChart.data.datasets[1].data = redData;
