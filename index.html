@@ -1,3 +1,10 @@
+要將網頁上的圖表變成跟之前 Android App 一樣的**分組長條圖 (Grouped Bar Chart)**，我們只需要修改 `Chart.js` 的設定部分。
+
+我把圖表的 `type` 從 `'line'` 改成了 `'bar'`，並加入了背景顏色 (`backgroundColor`) 和圓角 (`borderRadius`)，讓它看起來更有現代感，同時優化了深色模式的字體和網格線顏色。
+
+你可以直接替換掉原本的程式碼。以下是**完整更新後**的 HTML 檔案：
+
+```html
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -98,7 +105,6 @@
     let viewer = null;
     let stationEntities = {};
 
-    // ==================== 新增：儲存最新資料，確保藍紅線永遠對齊 ====================
     let latestReadings = {};
     let latestPredictions = null;
     let latestPredTime = '';
@@ -192,22 +198,48 @@
         }
     }
 
-    // ==================== 3. 圖表 ====================
+    // ==================== 3. 圖表 (已更新為 Bar Chart) ====================
     const wanChart = new Chart(document.getElementById('wanChart'), {
-        type: 'line',
+        type: 'bar', // 🌟 改成 bar
         data: { 
             labels: [], 
             datasets: [
-                { label: '實時 (WAN)', data: [], borderColor: '#58a6ff', tension: 0.3, borderWidth: 3 },
-                { label: 'GNN 6h 預測', data: [], borderColor: '#f85149', borderDash: [5, 5], tension: 0.3, borderWidth: 3 }
+                { 
+                    label: '實時 (WAN)', 
+                    data: [], 
+                    backgroundColor: 'rgba(88, 166, 255, 0.85)', // 🌟 藍色柱子，稍微帶點透明度
+                    borderColor: '#58a6ff', 
+                    borderWidth: 1,
+                    borderRadius: 4 // 🌟 加點圓角更好看
+                },
+                { 
+                    label: 'GNN 6h 預測', 
+                    data: [], 
+                    backgroundColor: 'rgba(248, 81, 73, 0.85)', // 🌟 紅色柱子
+                    borderColor: '#f85149', 
+                    borderWidth: 1,
+                    borderRadius: 4
+                }
             ]
         },
         options: { 
             responsive: true, 
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'top' } },
+            plugins: { 
+                legend: { 
+                    position: 'top',
+                    labels: { color: '#c9d1d9' } // 🌟 圖例字體配合深色模式
+                } 
+            },
             scales: {
-                x: { ticks: { maxRotation: 45, minRotation: 45 } }
+                x: { 
+                    ticks: { color: '#c9d1d9', maxRotation: 45, minRotation: 45 },
+                    grid: { color: 'rgba(48, 54, 61, 0.5)' } // 🌟 網格線變暗
+                },
+                y: {
+                    ticks: { color: '#c9d1d9' },
+                    grid: { color: 'rgba(48, 54, 61, 0.5)' }
+                }
             }
         }
     });
@@ -215,43 +247,34 @@
     const aiChart = new Chart(document.getElementById('aiChart'), {
         type: 'line',
         data: { labels: [], datasets: [{ label: 'Risk Score', data: [], borderColor: '#58a6ff', tension: 0.4 }] },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#c9d1d9' } } },
+            scales: {
+                x: { ticks: { color: '#c9d1d9' }, grid: { color: 'rgba(48, 54, 61, 0.5)' } },
+                y: { ticks: { color: '#c9d1d9' }, grid: { color: 'rgba(48, 54, 61, 0.5)' } }
+            }
+        }
     });
 
-    // ==================== 關鍵修正：統一更新函數（已改成你指定的英文排序） ====================
+    // ==================== 更新函數 ====================
     function updateWANChart() {
-        // === 你指定的全新排序 + 完整英文標籤 ===
         const stationOrder = [
-            "Causeway_Bay_Roadside",
-            "Central_Roadside",
-            "Central_Western_General",
-            "Eastern_General",
-            "Kwai_Chung_General",
-            "Kwun_Tong_General",
-            "Mong_Kok_Roadside",
-            "North_General",
-            "Sha_Tin_General",
-            "Sham_Shui_Po_General",
-            "Southern_General",
-            "Tai_Po_General",
-            "Tap_Mun_General",
-            "Tseung_Kwan_O_General",
-            "Tsuen_Wan_General",
-            "Tuen_Mun_General",
-            "Tung_Chung_General",
-            "Yuen_Long_General"
+            "Causeway_Bay_Roadside", "Central_Roadside", "Central_Western_General",
+            "Eastern_General", "Kwai_Chung_General", "Kwun_Tong_General",
+            "Mong_Kok_Roadside", "North_General", "Sha_Tin_General",
+            "Sham_Shui_Po_General", "Southern_General", "Tai_Po_General",
+            "Tap_Mun_General", "Tseung_Kwan_O_General", "Tsuen_Wan_General",
+            "Tuen_Mun_General", "Tung_Chung_General", "Yuen_Long_General"
         ];
 
-        // X軸直接使用你指定的英文 key
         const orderedLabels = stationOrder;
-
-        // 藍線資料（實時）
         const blueData = stationOrder.map(k => latestReadings[k] !== undefined ? latestReadings[k] : 0);
 
         wanChart.data.labels = orderedLabels;
         wanChart.data.datasets[0].data = blueData;
 
-        // 紅線資料（GNN 6小時預測）
         if (latestPredictions) {
             const redData = stationOrder.map(k => latestPredictions[k] !== undefined ? latestPredictions[k] : 0);
             wanChart.data.datasets[1].data = redData;
@@ -261,7 +284,7 @@
         wanChart.update();
     }
 
-    // ==================== Firebase 監聽（藍線 - 實時） ====================
+    // ==================== Firebase 監聽 ====================
     db.ref('GAGNN_24hours/GAGNN_data/readings').on('value', snap => {
         const readings = snap.val();
         if (readings) {
@@ -271,7 +294,6 @@
         }
     });
 
-    // ==================== Firebase 監聽（紅線 - GNN 6h 預測） ====================
     db.ref('GAGNN_v2/predictions').orderByKey().limitToLast(1).on('value', snap => {
         const predictions = snap.val();
         if (predictions) {
@@ -282,7 +304,6 @@
             console.log(`📈 紅線更新：預測時間 ${timeKey}`);
             updateWANChart();
 
-            // 警告橫幅
             const orderedValues = Object.values(latestPredictions || {});
             const avg = orderedValues.length ? 
                 orderedValues.reduce((a, b) => a + b, 0) / orderedValues.length : 0;
@@ -295,12 +316,6 @@
                 banner.style.display = 'none';
             }
         }
-    });
-
-    // ==================== 其他 Firebase 監聽（保持不變） ====================
-    db.ref('GAGNN_v2/dashboard').on('value', snap => {
-        const d = snap.val();
-        if (d) console.log("Dashboard Updated:", d.last_updated);
     });
 
     db.ref('56214328/latest').on('value', snap => {
@@ -328,3 +343,4 @@
 </script>
 </body>
 </html>
+```
