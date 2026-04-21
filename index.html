@@ -9,129 +9,786 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0d1117; --card: rgba(22, 27, 34, 0.85); --blue: #58a6ff;
-            --green: #3fb950; --red: #f85149; --text: #c9d1d9; --border: #30363d;
+            --bg: #080c10;
+            --surface: rgba(14, 20, 28, 0.92);
+            --card: rgba(16, 24, 36, 0.88);
+            --blue: #38bdf8;
+            --blue-dim: rgba(56,189,248,0.15);
+            --green: #34d399;
+            --red: #f87171;
+            --amber: #fbbf24;
+            --text: #cbd5e1;
+            --muted: #64748b;
+            --border: rgba(56,189,248,0.15);
+            --border-strong: rgba(56,189,248,0.35);
+            --glow: 0 0 20px rgba(56,189,248,0.2);
         }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; }
-        /* 頂部警告條 */
-        #alert-banner { display: none; background: var(--red); color: white; text-align: center; padding: 8px; font-weight: bold; position: fixed; width: 100%; z-index: 9999; }
-        .page { display: none; padding: 20px; height: 100vh; animation: fadeIn 0.4s ease; box-sizing: border-box; overflow-y: auto; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Noto Sans TC', 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            background-image:
+                radial-gradient(ellipse at 20% 0%, rgba(56,189,248,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(52,211,153,0.04) 0%, transparent 50%);
+        }
+
+        /* ── Alert Banner ─────────────────────────────────────────── */
+        #alert-banner {
+            display: none;
+            background: linear-gradient(90deg, #7f1d1d, #991b1b, #7f1d1d);
+            color: white;
+            text-align: center;
+            padding: 10px 20px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            position: fixed;
+            width: 100%;
+            z-index: 9999;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #f87171;
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:0.85} }
+
+        /* ── Pages ────────────────────────────────────────────────── */
+        .page { display: none; padding: 16px; height: 100vh; box-sizing: border-box; overflow-y: auto; animation: fadeIn 0.35s ease; }
         .active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .container { max-width: 1200px; margin: auto; display: flex; flex-direction: column; gap: 15px; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-align: center; backdrop-filter: blur(10px); }
-        .status-hero { font-size: 3.5rem; font-weight: bold; color: var(--blue); margin: 10px 0; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin: 15px 0; font-size: 0.9rem; }
-        .btn-group { display: flex; gap: 10px; justify-content: center; }
-        .btn { background: var(--blue); color: white; border: none; padding: 12px 24px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn:hover { transform: scale(1.02); filter: brightness(1.1); }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        #cesiumContainer { width: 100%; height: 68vh; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
-        /* 18區導航選單 */
-        .nav-menu {
-            position: absolute; top: 15px; left: 15px; z-index: 10;
-            background: rgba(22, 27, 34, 0.9); border: 1px solid var(--border);
-            padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px;
-            max-height: 55vh; overflow-y: auto; width: 160px;
+        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+        .container { max-width: 1280px; margin: auto; display: flex; flex-direction: column; gap: 14px; }
+
+        /* ── Cards ────────────────────────────────────────────────── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+            position: relative;
+            overflow: hidden;
         }
-        .nav-btn { background: #21262d; color: var(--text); border: 1px solid var(--border); padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; text-align: left; }
-        .nav-btn:hover { background: var(--blue); color: white; }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--blue-dim), transparent);
+        }
+
+        /* ── Header ───────────────────────────────────────────────── */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0 4px;
+        }
+        .page-header h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--blue);
+            letter-spacing: 0.08em;
+        }
+        .live-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--green);
+        }
+        .live-dot::before {
+            content: '';
+            width: 7px; height: 7px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+        /* ── Hero Score ───────────────────────────────────────────── */
+        .hero-score-wrap { text-align: center; padding: 10px 0; }
+        .hero-label { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; }
+        .hero-score {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--blue);
+            line-height: 1;
+            text-shadow: 0 0 30px rgba(56,189,248,0.5);
+            letter-spacing: -2px;
+        }
+        .hero-status { font-size: 1rem; font-weight: 700; margin-top: 8px; }
+
+        /* ── Info Grid ────────────────────────────────────────────── */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            margin: 14px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .info-item { display: flex; flex-direction: column; gap: 3px; }
+        .info-label { color: var(--muted); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; }
+        .info-value { color: var(--blue); font-weight: 700; font-size: 0.95rem; }
+
+        /* ── Extra Stats Row (Page 1) ─────────────────────────────── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .stat-mini {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-mini .label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+        .stat-mini .val { font-size: 1.25rem; font-weight: 700; color: var(--green); }
+
+        /* ── Buttons ──────────────────────────────────────────────── */
+        .btn-group { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            background: linear-gradient(135deg, rgba(56,189,248,0.2), rgba(56,189,248,0.08));
+            color: var(--blue);
+            border: 1px solid var(--border-strong);
+            padding: 11px 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+            transition: all 0.25s;
+        }
+        .btn:hover { background: rgba(56,189,248,0.25); box-shadow: var(--glow); transform: translateY(-1px); }
+        .btn-ghost {
+            background: rgba(255,255,255,0.03);
+            color: var(--muted);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { color: var(--text); background: rgba(255,255,255,0.07); box-shadow: none; }
+
+        /* ── Page 2: Charts ───────────────────────────────────────── */
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .chart-header h4 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--blue);
+            letter-spacing: 0.06em;
+        }
+        .data-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            background: var(--blue-dim);
+            color: var(--blue);
+            border: 1px solid var(--border-strong);
+            padding: 2px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.1em;
+        }
+        .esp32-status-row {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+        .esp-badge {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 6px;
+            color: var(--text);
+        }
+        .esp-badge span { color: var(--amber); }
+
+        /* ── Page 3: 3D Map ───────────────────────────────────────── */
+        #cesiumContainer { width: 100%; height: 62vh; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+
+        .map-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        /* District nav menu */
+        .nav-menu {
+            position: absolute;
+            top: 10px; left: 10px;
+            z-index: 10;
+            background: rgba(8,12,16,0.93);
+            border: 1px solid var(--border-strong);
+            padding: 8px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 52vh;
+            overflow-y: auto;
+            width: 148px;
+        }
+        .nav-menu::-webkit-scrollbar { width: 4px; }
+        .nav-menu::-webkit-scrollbar-track { background: transparent; }
+        .nav-menu::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+        .nav-btn {
+            background: rgba(56,189,248,0.05);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 5px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.72rem;
+            text-align: left;
+            font-family: 'Noto Sans TC', sans-serif;
+            transition: 0.2s;
+        }
+        .nav-btn:hover { background: rgba(56,189,248,0.2); color: var(--blue); border-color: var(--border-strong); }
+
+        /* Info panel that appears on 3D map */
+        #map-info-panel {
+            position: absolute;
+            top: 10px; right: 10px;
+            z-index: 10;
+            background: rgba(8,12,16,0.93);
+            border: 1px solid var(--border-strong);
+            padding: 12px 14px;
+            border-radius: 10px;
+            width: 200px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            display: none;
+        }
+        #map-info-panel.visible { display: block; }
+        #map-info-panel h5 { color: var(--blue); font-size: 0.82rem; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+        .panel-row { display: flex; justify-content: space-between; padding: 3px 0; color: var(--muted); }
+        .panel-row span { color: var(--text); }
+
+        /* Wind arrow overlay */
+        .wind-badge {
+            position: absolute;
+            bottom: 14px; right: 14px;
+            z-index: 10;
+            background: rgba(8,12,16,0.9);
+            border: 1px solid var(--border-strong);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--muted);
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 120px;
+        }
+        .wind-badge .title { color: var(--blue); font-weight: 700; font-size: 0.72rem; margin-bottom: 2px; }
+
+        /* Cesium UI overrides */
+        .cesium-widget-credits { display: none !important; }
+
+        /* ── AQHI Colour scale chip ───────────────────────────────── */
+        .aqhi-chip {
+            display: inline-block;
+            padding: 1px 7px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #fff;
+        }
+
+        /* ── Scrollbar (page 1/2) ─────────────────────────────────── */
+        .page::-webkit-scrollbar { width: 5px; }
+        .page::-webkit-scrollbar-track { background: transparent; }
+        .page::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
     </style>
 </head>
 <body>
-<div id="alert-banner">🚨 GNN 警告：偵測到未來區域性空氣風險偏高</div>
-<div id="page1" class="page active">
+
+<!-- ══ ALERT BANNER ══════════════════════════════════════════════════════ -->
+<div id="alert-banner">🚨 GAGNN 警告：偵測到未來區域性空氣風險偏高</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PAGE 1 — SUMMARY DASHBOARD
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="page1" class="page active" style="padding-top:20px;">
     <div class="container">
-        <header style="text-align: center; margin-top: 10px;"><h1>🏗️ BuildTech 智能監控摘要</h1></header>
+        <div class="page-header">
+            <h1>🏗️ BUILDTECH SMART MONITOR</h1>
+            <span class="live-dot" id="p1-live-status">實時連接中</span>
+        </div>
+
+        <!-- LAN Structural Risk Card -->
         <div class="card">
-            <p>LAN 實時結構風險預測指數</p>
-            <div id="hero_score" class="status-hero">---</div>
-            <div id="hero_status" style="font-size: 1.2rem; font-weight: bold;">數據連接中...</div>
+            <div class="hero-label">LAN · 實時結構風險預測指數 (BuildTech-LAN-GNN)</div>
+            <div class="hero-score-wrap">
+                <div class="hero-score" id="hero_score">---</div>
+                <div class="hero-status" id="hero_status">數據連接中...</div>
+            </div>
             <div class="info-grid">
-                <div>🌡️ 溫度：<span id="text_temp">--</span>°C</div>
-                <div>💧 濕度：<span id="text_hum">--</span>%</div>
-                <div>🌫️ MQ-135：<span id="text_mq135">--</span></div>
-                <div>🕒 最後更新：<span id="text_time">--</span></div>
+                <div class="info-item">
+                    <div class="info-label">🌡️ 溫度</div>
+                    <div class="info-value"><span id="text_temp">--</span> °C</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">💧 濕度</div>
+                    <div class="info-value"><span id="text_hum">--</span> %</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">🌫️ MQ-135 (norm)</div>
+                    <div class="info-value"><span id="text_mq135">--</span></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">🧪 MQ-2 (norm)</div>
+                    <div class="info-value"><span id="text_mq2">--</span></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">☁️ MQ-7 (norm)</div>
+                    <div class="info-value"><span id="text_mq7">--</span></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">🔔 GNN 引擎狀態</div>
+                    <div class="info-value" id="text_engine_status">--</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">📍 感應器位置</div>
+                    <div class="info-value"><span id="text_geo">--</span></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">🕒 最後更新</div>
+                    <div class="info-value"><span id="text_time">--</span></div>
+                </div>
             </div>
-            <div class="btn-group">
-                <button class="btn" onclick="showPage(3)">🗺️ 18區 3D 數位分身</button>
-                <button class="btn btn-outline" onclick="showPage(2)">📊 WAN/LAN 深度趨勢</button>
+        </div>
+
+        <!-- WAN AQHI Summary -->
+        <div class="card">
+            <div class="chart-header">
+                <h4>🌏 WAN · 全港 18區 AQHI 即時摘要</h4>
+                <span class="data-tag" id="p1-aqhi-time">載入中...</span>
             </div>
+            <div class="stats-row" id="p1-aqhi-grid">
+                <!-- populated by JS -->
+            </div>
+        </div>
+
+        <!-- test_esp32 status -->
+        <div class="card">
+            <div class="chart-header">
+                <h4>📡 ESP32 節點狀態</h4>
+                <span class="live-dot">test_esp32</span>
+            </div>
+            <div class="esp32-status-row">
+                <div class="esp-badge">最新封包：<span id="p1-esp32-msg">載入中...</span></div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn" onclick="showPage(3)">🗺️ 18區 3D 數位分身</button>
+            <button class="btn btn-ghost" onclick="showPage(2)">📊 WAN / LAN 深度趨勢</button>
         </div>
     </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PAGE 2 — WAN/LAN CHARTS
+══════════════════════════════════════════════════════════════════════════ -->
 <div id="page2" class="page">
     <div class="container">
-        <button class="btn btn-outline" onclick="showPage(1)">← 返回摘要</button>
-        <div class="card">
-            <h4>🗺️ 18區 AQHI: 實時 vs 6小時 AI 預測 (WAN)</h4>
-            <div style="height: 300px;"><canvas id="wanChart"></canvas></div>
+        <div class="page-header">
+            <button class="btn btn-ghost" onclick="showPage(1)">← 返回摘要</button>
+            <span class="live-dot" id="p2-update-time">更新中...</span>
         </div>
-        <div class="card"><h4>LAN 實時風險預測歷史</h4><div style="height: 250px;"><canvas id="aiChart"></canvas></div></div>
+
+        <!-- WAN Bar Chart -->
+        <div class="card">
+            <div class="chart-header">
+                <h4>🗺️ 18區 AQHI — 即時 vs GAGNN 6h 預測 (WAN · Firebase)</h4>
+                <span class="data-tag">aqhi_history / latest</span>
+            </div>
+            <div style="height:300px;"><canvas id="wanChart"></canvas></div>
+        </div>
+
+        <!-- LAN AI prediction history (line chart) -->
+        <div class="card">
+            <div class="chart-header">
+                <h4>📈 LAN 實時結構風險預測歷史 (BuildTech-LAN-GNN)</h4>
+                <span class="data-tag">56214328 / ai_analysis</span>
+            </div>
+            <div style="height:220px;"><canvas id="aiChart"></canvas></div>
+        </div>
+
+        <!-- ESP32 raw sensor history -->
+        <div class="card">
+            <div class="chart-header">
+                <h4>🔬 LAN 感應器歷史記錄 (MQ-135 / MQ-2 / MQ-7)</h4>
+                <span class="data-tag">56214328 / logs</span>
+            </div>
+            <div style="height:220px;"><canvas id="sensorChart"></canvas></div>
+        </div>
     </div>
 </div>
-<div id="page3" class="page" style="overflow: hidden;">
-    <div class="container" style="height: 100%;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <button class="btn btn-outline" onclick="showPage(1)">← 返回</button>
-            <div style="text-align: right;">
-                <div id="api_status" style="color: var(--green); font-weight: bold; font-size: 0.85rem;">● 實時同步 AQHI</div>
-                <div id="last_update_time" style="font-size: 0.7rem; color: #8b949e;">數據加載中...</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PAGE 3 — 3D DIGITAL TWIN MAP
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="page3" class="page" style="overflow:hidden; padding-top:14px;">
+    <div class="container" style="height:100%;">
+        <div class="map-topbar">
+            <button class="btn btn-ghost" onclick="showPage(1)">← 返回</button>
+            <div style="text-align:right;">
+                <div class="live-dot" id="map-live-label">實時同步 aqhi_history</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--muted); margin-top:3px;" id="last_update_time">數據加載中...</div>
             </div>
         </div>
-        <div class="card" style="padding: 0; flex-grow: 1; overflow: hidden; position: relative;">
+
+        <div class="card" style="padding:0; position:relative; flex-grow:1; overflow:hidden;">
+            <!-- District navigation -->
             <div class="nav-menu" id="location-list"></div>
+
+            <!-- Selected station info panel -->
+            <div id="map-info-panel">
+                <h5 id="panel-name">—</h5>
+                <div class="panel-row">AQHI <span id="panel-aqhi">--</span></div>
+                <div class="panel-row">濕度 <span id="panel-hum">-- %</span></div>
+                <div class="panel-row">風向 <span id="panel-wdir">--°</span></div>
+                <div class="panel-row">風速 <span id="panel-wspd">-- km/h</span></div>
+                <div class="panel-row">颱風 <span id="panel-cyclone">--</span></div>
+            </div>
+
+            <!-- Avg wind summary badge -->
+            <div class="wind-badge" id="wind-badge">
+                <div class="title">🌬️ 全港平均氣象</div>
+                <div>濕度：<span id="avg-hum" style="color:var(--blue);">--</span> %</div>
+                <div>風速：<span id="avg-wspd" style="color:var(--blue);">--</span> km/h</div>
+                <div>颱風：<span id="avg-cyclone" style="color:var(--amber);">--</span></div>
+                <div>數據時間：<span id="data-date" style="color:var(--green);">--</span></div>
+            </div>
+
             <div id="cesiumContainer"></div>
         </div>
     </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════════════════════ -->
 <script>
-    // ==================== 1. 初始化 ====================
-    const firebaseConfig = { databaseURL: "https://project-12cc8-default-rtdb.asia-southeast1.firebasedatabase.app" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4Y2VjODU4MC0zMTU2LTQwYTktYTdjYi1kMGNiN2QwMzY4YWQiLCJpZCI6NDA4MjM2LCJpYXQiOjE3NzQzMzQ2ODJ9.ONn3b4v-wb1_SfpQ-aRomRX3qajSLBWwbcwj28wMZsI';
+// ══════════════════════════════════════════════════════════════════════════
+// 0. FIREBASE INIT
+// ══════════════════════════════════════════════════════════════════════════
+const firebaseConfig = { databaseURL: "https://project-12cc8-default-rtdb.asia-southeast1.firebasedatabase.app" };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+console.log('[Firebase] Initialized');
 
-    let viewer = null;
-    let stationEntities = {};
+// ══════════════════════════════════════════════════════════════════════════
+// 1. PAGE NAVIGATION
+// ══════════════════════════════════════════════════════════════════════════
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page' + pageId).classList.add('active');
+    console.log(`[Nav] Switched to page ${pageId}`);
+    if (pageId === 3 && !viewer) {
+        console.log('[Map] First load — initialising Cesium');
+        setTimeout(initCesium, 200);
+    }
+}
 
-    let latestReadings = {};
-    let latestPredictions = null;
-    let latestPredTime = '';
+// ══════════════════════════════════════════════════════════════════════════
+// 2. STATION DEFINITIONS
+// ══════════════════════════════════════════════════════════════════════════
+const stations = [
+    { name:"中西區",  key:"Central_Western",  lon:114.1461, lat:22.2859, humStn:["HKO","CCH"],  windStn:["HKS","SC"]  },
+    { name:"南區",    key:"Southern",          lon:114.1593, lat:22.2471, humStn:["HKO","PEN"],  windStn:["WLP","WGL"] },
+    { name:"東區",    key:"Eastern",           lon:114.2201, lat:22.2842, humStn:["JKB","SKG"],  windStn:["JKB","SKG"] },
+    { name:"觀塘",    key:"Kwun Tong",         lon:114.2258, lat:22.3132, humStn:["TKL","JKB"],  windStn:["TKL","JKB"] },
+    { name:"深水埗",  key:"Sham Shui Po",      lon:114.1567, lat:22.3305, humStn:["HKO","YCT"],  windStn:["CCH","SC"]  },
+    { name:"葵涌",    key:"Kwai Chung",        lon:114.1287, lat:22.3553, humStn:["KP","YCT"],   windStn:["KP","NP"]   },
+    { name:"荃灣",    key:"Tsuen Wan",         lon:114.1145, lat:22.3713, humStn:["KSC","TMS"],  windStn:["TPK","NP"]  },
+    { name:"將軍澳",  key:"Tseung Kwan O",     lon:114.2599, lat:22.3175, humStn:["TKL","SKG"],  windStn:["TKL","SKG"] },
+    { name:"元朗",    key:"Yuen Long",         lon:114.0227, lat:22.4451, humStn:["SHA","LFS"],  windStn:["SHA","LFS"] },
+    { name:"屯門",    key:"Tuen Mun",          lon:113.9772, lat:22.3908, humStn:["TMS","LFS"],  windStn:["TME","TUN"] },
+    { name:"東涌",    key:"Tung Chung",        lon:113.9439, lat:22.2891, humStn:["TC","HKA"],   windStn:["TC","HKA"]  },
+    { name:"大埔",    key:"Tai Po",            lon:114.1643, lat:22.4507, humStn:["SSH","SEK"],  windStn:["SSH","SEK"] },
+    { name:"沙田",    key:"Sha Tin",           lon:114.1849, lat:22.3762, humStn:["SHA","SEK"],  windStn:["SHA","SHL"] },
+    { name:"北區",    key:"North",             lon:114.1281, lat:22.4967, humStn:["SSH","SEK"],  windStn:["SSH","SEK"] },
+    { name:"塔門",    key:"Tap Mun",           lon:114.3607, lat:22.4716, humStn:["SKG","SSH"],  windStn:["NGP","WGL"] },
+    { name:"銅鑼灣",  key:"Causeway Bay",      lon:114.1849, lat:22.2806, humStn:["HKO","JKB"],  windStn:["HKS","SE"]  },
+    { name:"中環",    key:"Central",           lon:114.1576, lat:22.2818, humStn:["HKO","CCH"],  windStn:["HKS","PLC"] },
+    { name:"旺角",    key:"Mong Kok",          lon:114.1685, lat:22.3225, humStn:["HKO","YCT"],  windStn:["CCB","CCH"] }
+];
 
-    function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById('page' + pageId).classList.add('active');
-        if (pageId === 3 && !viewer) setTimeout(initCesium, 200);
+// AQHI key variants in Firebase
+function getAqhiKeys(s) {
+    return [
+        `AQHI_${s.key}`,
+        `AQHI_${s.key.replace(/_/g,' ')}`,
+        `AQHI_${s.name}`
+    ];
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 3. SHARED DATA STORE
+// ══════════════════════════════════════════════════════════════════════════
+let latestAqhiRecord = {};   // latest aqhi_history record (full object)
+let latestReadings   = {};   // GAGNN_24hours readings
+let latestPredictions = null;
+let latestPredTime   = '';
+
+// Helper — mean of a list of values
+function mean(arr) {
+    const filtered = arr.filter(v => v !== undefined && v !== null && !isNaN(v));
+    return filtered.length ? filtered.reduce((a,b) => a+b, 0) / filtered.length : null;
+}
+
+// Get AQHI for station from Firebase record
+function getAqhi(record, s) {
+    for (const k of getAqhiKeys(s)) {
+        if (record[k] !== undefined) return record[k];
+    }
+    return null;
+}
+
+// Get mean humidity for station
+function getHum(record, s) {
+    return mean(s.humStn.map(code => record[`HUM_${code}`]));
+}
+
+// Get mean wind speed
+function getWspd(record, s) {
+    return mean(s.windStn.map(code => record[`WSPD_${code}`]));
+}
+
+// Get mean wind direction (circular)
+function getWdir(record, s) {
+    const dirs = s.windStn.map(code => record[`PDIR_${code}`]).filter(v => v !== undefined);
+    if (!dirs.length) return null;
+    // circular mean
+    const sinMean = mean(dirs.map(d => Math.sin(d * Math.PI / 180)));
+    const cosMean = mean(dirs.map(d => Math.cos(d * Math.PI / 180)));
+    let deg = Math.atan2(sinMean, cosMean) * 180 / Math.PI;
+    return ((deg % 360) + 360) % 360;
+}
+
+// Wind direction to compass label
+function degToCompass(deg) {
+    if (deg === null || deg === undefined) return '--';
+    const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+    return dirs[Math.round(deg / 22.5) % 16];
+}
+
+// AQHI colour
+function aqhiColor(v) {
+    if (v <= 3)  return '#34d399';
+    if (v <= 6)  return '#fbbf24';
+    if (v <= 10) return '#f87171';
+    return '#dc2626';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 4. CHARTS
+// ══════════════════════════════════════════════════════════════════════════
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size   = 10;
+
+const gridColor = 'rgba(56,189,248,0.07)';
+
+const wanChart = new Chart(document.getElementById('wanChart'), {
+    type: 'bar',
+    data: {
+        labels: [],
+        datasets: [
+            {
+                label: '即時 AQHI (aqhi_history)',
+                data: [],
+                backgroundColor: ctx => {
+                    const v = ctx.dataset.data[ctx.dataIndex];
+                    return v <= 3 ? 'rgba(52,211,153,0.75)' : v <= 6 ? 'rgba(251,191,36,0.75)' : 'rgba(248,113,113,0.75)';
+                },
+                borderColor: 'transparent',
+                borderRadius: 4,
+                order: 1
+            },
+            {
+                label: 'GAGNN 6h 預測',
+                data: [],
+                backgroundColor: 'rgba(248,81,73,0.55)',
+                borderColor: '#f85149',
+                borderWidth: 1,
+                borderRadius: 4,
+                order: 2
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#94a3b8', font:{size:10} } } },
+        scales: {
+            x: { ticks: { color:'#64748b', maxRotation:45, minRotation:45 }, grid: { color:gridColor } },
+            y: { min:0, max:11, ticks: { color:'#64748b', stepSize:1 }, grid: { color:gridColor } }
+        }
+    }
+});
+
+const aiChart = new Chart(document.getElementById('aiChart'), {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'LAN 風險指數',
+            data: [],
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56,189,248,0.06)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 3,
+            pointBackgroundColor: '#38bdf8'
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color:'#94a3b8' } } },
+        scales: {
+            x: { ticks: { color:'#64748b' }, grid: { color:gridColor } },
+            y: { ticks: { color:'#64748b' }, grid: { color:gridColor } }
+        }
+    }
+});
+
+const sensorChart = new Chart(document.getElementById('sensorChart'), {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            { label:'MQ-135', data:[], borderColor:'#38bdf8', tension:0.3, pointRadius:2 },
+            { label:'MQ-2',   data:[], borderColor:'#34d399', tension:0.3, pointRadius:2 },
+            { label:'MQ-7',   data:[], borderColor:'#fbbf24', tension:0.3, pointRadius:2 }
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color:'#94a3b8' } } },
+        scales: {
+            x: { ticks: { color:'#64748b', maxRotation:45 }, grid: { color:gridColor } },
+            y: { ticks: { color:'#64748b' }, grid: { color:gridColor } }
+        }
+    }
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// 5. PAGE 1 — AQHI MINI GRID
+// ══════════════════════════════════════════════════════════════════════════
+function renderPage1AqhiGrid(record) {
+    const grid = document.getElementById('p1-aqhi-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    // show first 8 stations as mini stats
+    stations.slice(0,8).forEach(s => {
+        const val = getAqhi(record, s);
+        const div = document.createElement('div');
+        div.className = 'stat-mini';
+        div.innerHTML = `
+            <div class="label">${s.name}</div>
+            <div class="val" style="color:${val !== null ? aqhiColor(val) : '#64748b'}">${val ?? '--'}</div>
+        `;
+        grid.appendChild(div);
+    });
+
+    // time tag
+    const timeEl = document.getElementById('p1-aqhi-time');
+    if (timeEl && record.Date) timeEl.textContent = record.Date;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 6. WAN CHART UPDATE
+// ══════════════════════════════════════════════════════════════════════════
+function updateWANChart() {
+    // Labels = short Chinese names
+    const labels = stations.map(s => s.name);
+
+    // Blue bars — from aqhi_history Firebase
+    const blueData = stations.map(s => getAqhi(latestAqhiRecord, s) ?? 0);
+
+    // Red bars — from GAGNN_24hours predictions (keyed differently)
+    const stationKeyMap = {
+        "Causeway_Bay_Roadside":    stations.find(s=>s.key==="Causeway Bay"),
+        "Central_Roadside":         stations.find(s=>s.key==="Central"),
+        "Central_Western_General":  stations.find(s=>s.key==="Central_Western"),
+        "Eastern_General":          stations.find(s=>s.key==="Eastern"),
+        "Kwai_Chung_General":       stations.find(s=>s.key==="Kwai Chung"),
+        "Kwun_Tong_General":        stations.find(s=>s.key==="Kwun Tong"),
+        "Mong_Kok_Roadside":        stations.find(s=>s.key==="Mong Kok"),
+        "North_General":            stations.find(s=>s.key==="North"),
+        "Sha_Tin_General":          stations.find(s=>s.key==="Sha Tin"),
+        "Sham_Shui_Po_General":     stations.find(s=>s.key==="Sham Shui Po"),
+        "Southern_General":         stations.find(s=>s.key==="Southern"),
+        "Tai_Po_General":           stations.find(s=>s.key==="Tai Po"),
+        "Tap_Mun_General":          stations.find(s=>s.key==="Tap Mun"),
+        "Tseung_Kwan_O_General":    stations.find(s=>s.key==="Tseung Kwan O"),
+        "Tsuen_Wan_General":        stations.find(s=>s.key==="Tsuen Wan"),
+        "Tuen_Mun_General":         stations.find(s=>s.key==="Tuen Mun"),
+        "Tung_Chung_General":       stations.find(s=>s.key==="Tung Chung"),
+        "Yuen_Long_General":        stations.find(s=>s.key==="Yuen Long"),
+    };
+
+    let redData = new Array(stations.length).fill(0);
+    if (latestPredictions) {
+        Object.entries(latestPredictions).forEach(([predKey, val]) => {
+            const station = stationKeyMap[predKey];
+            if (station) {
+                const idx = stations.indexOf(station);
+                if (idx !== -1) redData[idx] = val;
+            }
+        });
     }
 
-    // ==================== 2. 18區 3D 地圖 ====================
-    const stations = [
-        { name: "中西區", englishKey: "Central/Western", lon: 114.1461, lat: 22.2859 },
-        { name: "南區", englishKey: "Southern", lon: 114.1593, lat: 22.2471 },
-        { name: "東區", englishKey: "Eastern", lon: 114.2201, lat: 22.2842 },
-        { name: "觀塘", englishKey: "Kwun Tong", lon: 114.2258, lat: 22.3132 },
-        { name: "深水埗", englishKey: "Sham Shui Po", lon: 114.1567, lat: 22.3305 },
-        { name: "葵涌", englishKey: "Kwai Chung", lon: 114.1287, lat: 22.3553 },
-        { name: "荃灣", englishKey: "Tsuen Wan", lon: 114.1145, lat: 22.3713 },
-        { name: "將軍澳", englishKey: "Tseung Kwan O", lon: 114.2599, lat: 22.3175 },
-        { name: "元朗", englishKey: "Yuen Long", lon: 114.0227, lat: 22.4451 },
-        { name: "屯門", englishKey: "Tuen Mun", lon: 113.9772, lat: 22.3908 },
-        { name: "東涌", englishKey: "Tung Chung", lon: 113.9439, lat: 22.2891 },
-        { name: "大埔", englishKey: "Tai Po", lon: 114.1643, lat: 22.4507 },
-        { name: "沙田", englishKey: "Sha Tin", lon: 114.1849, lat: 22.3762 },
-        { name: "北區", englishKey: "North", lon: 114.1281, lat: 22.4967 },
-        { name: "塔門", englishKey: "Tap Mun", lon: 114.3607, lat: 22.4716 },
-        { name: "銅鑼灣", englishKey: "Causeway Bay", lon: 114.1849, lat: 22.2806 },
-        { name: "中環", englishKey: "Central", lon: 114.1576, lat: 22.2818 },
-        { name: "旺角", englishKey: "Mong Kok", lon: 114.1685, lat: 22.3225 }
-    ];
+    wanChart.data.labels = labels;
+    wanChart.data.datasets[0].data = blueData;
+    wanChart.data.datasets[1].data = redData;
+    if (latestPredTime) {
+        wanChart.data.datasets[1].label = `GAGNN 預測 (${latestPredTime})`;
+    }
+    wanChart.update();
 
-    async function initCesium() {
-        if (viewer) return;
+    console.log('[WanChart] Updated. Blue (real):', blueData, '| Red (pred):', redData);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 7. CESIUM 3D MAP
+// ══════════════════════════════════════════════════════════════════════════
+let viewer = null;
+let stationEntities = {};
+
+Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4Y2VjODU4MC0zMTU2LTQwYTktYTdjYi1kMGNiN2QwMzY4YWQiLCJpZCI6NDA4MjM2LCJpYXQiOjE3NzQzMzQ2ODJ9.ONn3b4v-wb1_SfpQ-aRomRX3qajSLBWwbcwj28wMZsI';
+
+async function initCesium() {
+    if (viewer) return;
+    try {
         viewer = new Cesium.Viewer('cesiumContainer', {
             terrainProvider: await Cesium.createWorldTerrainAsync(),
             baseLayerPicker: false, geocoder: false, homeButton: false,
@@ -139,200 +796,298 @@
         });
         viewer.scene.primitives.add(await Cesium.createOsmBuildingsAsync());
 
+        // Camera controls
         const ctrl = viewer.scene.screenSpaceCameraController;
         ctrl.enableLook = false;
         ctrl.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG];
 
+        // Build nav buttons
         const menu = document.getElementById('location-list');
         stations.forEach(s => {
             const btn = document.createElement('button');
             btn.className = 'nav-btn';
             btn.innerText = `📍 ${s.name}`;
-            btn.onclick = () => viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(s.lon, s.lat, 1500) });
+            btn.onclick = () => {
+                viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(s.lon, s.lat, 2000) });
+                showStationPanel(s);
+            };
             menu.appendChild(btn);
         });
 
-        await fetchAQHI();
-        viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(114.17, 22.33, 25000) });
-    }
+        // Click on entity
+        viewer.screenSpaceEventHandler.setInputAction(movement => {
+            const picked = viewer.scene.pick(movement.position);
+            if (Cesium.defined(picked) && picked.id && picked.id._stationData) {
+                showStationPanel(picked.id._stationData);
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-    async function fetchAQHI() {
-        const proxy = "https://corsproxy.io/?";
-        const target = "https://www.aqhi.gov.hk/epd/ddata/html/out/aqhi_ind_rss_Eng.xml";
-        try {
-            const res = await fetch(proxy + encodeURIComponent(target));
-            const xmlText = await res.text();
-            const xmlDoc = new DOMParser().parseFromString(xmlText, "text/xml");
-            const items = xmlDoc.querySelectorAll("item");
-            const aqhiData = {};
-            items.forEach(item => {
-                const title = item.querySelector("title").textContent.trim();
-                const match = item.querySelector("description").textContent.match(/:\s*(\d+)/);
-                if (match) aqhiData[title] = parseInt(match[1]);
-            });
-            stations.forEach(s => {
-                const val = aqhiData[s.englishKey] ?? 3;
-                updateStationMarker(s, val);
-            });
-            document.getElementById('last_update_time').innerText = `最後更新：${new Date().toLocaleTimeString()}`;
-        } catch (e) { console.error("AQHI Fetch Error"); }
-    }
+        // Render markers from last known data
+        updateCesiumMarkers();
 
-    function updateStationMarker(s, val) {
-        const color = val >= 7 ? Cesium.Color.RED : (val >= 4 ? Cesium.Color.GOLD : Cesium.Color.SPRINGGREEN);
+        viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(114.17, 22.33, 28000) });
+        console.log('[Cesium] Initialised successfully');
+    } catch (e) {
+        console.error('[Cesium] Init error:', e);
+    }
+}
+
+function updateCesiumMarkers() {
+    if (!viewer) return;
+    const record = latestAqhiRecord;
+
+    // Compute global avg humidity, wind speed
+    let allHum = [], allWspd = [];
+    stations.forEach(s => {
+        const h = getHum(record, s);
+        const w = getWspd(record, s);
+        if (h !== null) allHum.push(h);
+        if (w !== null) allWspd.push(w);
+    });
+    const avgHum  = mean(allHum);
+    const avgWspd = mean(allWspd);
+
+    document.getElementById('avg-hum').textContent    = avgHum  !== null ? avgHum.toFixed(0)  : '--';
+    document.getElementById('avg-wspd').textContent   = avgWspd !== null ? avgWspd.toFixed(1) : '--';
+    document.getElementById('avg-cyclone').textContent = record.Cyclone_Present ? '⚠️ 是' : '否';
+    document.getElementById('data-date').textContent  = record.Date || '--';
+
+    stations.forEach(s => {
+        const aqhi  = getAqhi(record, s);
+        const hum   = getHum(record, s);
+        const wspd  = getWspd(record, s);
+        const wdir  = getWdir(record, s);
+        const wdirLabel = degToCompass(wdir);
+
+        const color = aqhi !== null
+            ? (aqhi >= 7 ? Cesium.Color.fromCssColorString('#f87171')
+             : aqhi >= 4 ? Cesium.Color.fromCssColorString('#fbbf24')
+             :             Cesium.Color.fromCssColorString('#34d399'))
+            : Cesium.Color.GRAY;
+
+        // Pillar height scales with AQHI
+        const heightScale = aqhi ? aqhi * 120 : 200;
+
+        const labelText =
+            `${s.name}\n` +
+            `AQHI: ${aqhi ?? '--'}\n` +
+            `濕度: ${hum !== null ? hum.toFixed(0)+'%' : '--'}\n` +
+            `風向: ${wdir !== null ? wdir.toFixed(0)+'° '+wdirLabel : '--'}\n` +
+            `風速: ${wspd !== null ? wspd.toFixed(1)+' km/h' : '--'}`;
+
         if (stationEntities[s.name]) {
-            stationEntities[s.name].ellipsoid.material = color.withAlpha(0.6);
+            const ent = stationEntities[s.name];
+            ent.ellipsoid.radii = new Cesium.Cartesian3(400, 400, heightScale);
+            ent.ellipsoid.material = color.withAlpha(0.65);
+            ent.label.text = labelText;
+            console.log(`[Cesium] Updated marker: ${s.name} AQHI=${aqhi} wspd=${wspd} wdir=${wdir}`);
         } else if (viewer) {
-            stationEntities[s.name] = viewer.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(s.lon, s.lat, 100),
-                ellipsoid: { radii: new Cesium.Cartesian3(70,70,70), material: color.withAlpha(0.6) },
-                label: { text: `${s.name}\nAQHI: ${val}`, font: '11pt sans-serif', pixelOffset: new Cesium.Cartesian2(0, -70) }
+            const entity = viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(s.lon, s.lat, heightScale / 2),
+                ellipsoid: {
+                    radii: new Cesium.Cartesian3(400, 400, heightScale),
+                    material: color.withAlpha(0.65),
+                    outline: true,
+                    outlineColor: color
+                },
+                label: {
+                    text: labelText,
+                    font: '10pt "Noto Sans TC", sans-serif',
+                    style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                    outlineWidth: 2,
+                    outlineColor: Cesium.Color.BLACK,
+                    fillColor: Cesium.Color.WHITE,
+                    pixelOffset: new Cesium.Cartesian2(0, -80),
+                    disableDepthTestDistance: Number.POSITIVE_INFINITY,
+                    showBackground: true,
+                    backgroundColor: Cesium.Color.fromAlpha(Cesium.Color.BLACK, 0.6)
+                }
             });
+            entity._stationData = s;
+            stationEntities[s.name] = entity;
+            console.log(`[Cesium] Created marker: ${s.name}`);
         }
+    });
+}
+
+function showStationPanel(s) {
+    const record = latestAqhiRecord;
+    document.getElementById('panel-name').textContent   = s.name;
+    document.getElementById('panel-aqhi').textContent   = getAqhi(record, s) ?? '--';
+    const hum   = getHum(record, s);
+    const wspd  = getWspd(record, s);
+    const wdir  = getWdir(record, s);
+    document.getElementById('panel-hum').textContent    = hum   !== null ? hum.toFixed(0)+'%'       : '--';
+    document.getElementById('panel-wdir').textContent   = wdir  !== null ? wdir.toFixed(0)+'° '+degToCompass(wdir) : '--';
+    document.getElementById('panel-wspd').textContent   = wspd  !== null ? wspd.toFixed(1)+' km/h'  : '--';
+    document.getElementById('panel-cyclone').textContent = record.Cyclone_Present ? '⚠️ 是' : '否';
+    document.getElementById('map-info-panel').classList.add('visible');
+    console.log(`[Panel] Showing info for: ${s.name}`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 8. FIREBASE LISTENERS
+// ══════════════════════════════════════════════════════════════════════════
+
+// ── 8a. aqhi_history — latest entry ─────────────────────────────────────
+// We order by key and take last 1 record to get the most recent timestamp
+db.ref('aqhi_history').orderByKey().limitToLast(1).on('value', snap => {
+    const data = snap.val();
+    if (!data) {
+        console.warn('[Firebase] aqhi_history: no data');
+        return;
+    }
+    const timeKey = Object.keys(data)[0];
+    latestAqhiRecord = data[timeKey];
+    console.log(`[Firebase] aqhi_history updated: ${timeKey}`, latestAqhiRecord);
+
+    // Update time displays
+    const timeStr = latestAqhiRecord.Date || timeKey;
+    const el = document.getElementById('last_update_time');
+    if (el) el.textContent = `數據時間：${timeStr}`;
+    const p2el = document.getElementById('p2-update-time');
+    if (p2el) p2el.textContent = timeStr;
+
+    // Update page 1 mini grid
+    renderPage1AqhiGrid(latestAqhiRecord);
+
+    // Update WAN chart
+    updateWANChart();
+
+    // Update 3D map markers if open
+    updateCesiumMarkers();
+}, err => {
+    console.error('[Firebase] aqhi_history error:', err);
+});
+
+// ── 8b. GAGNN predictions ────────────────────────────────────────────────
+db.ref('GAGNN_v2/predictions').orderByKey().limitToLast(1).on('value', snap => {
+    const data = snap.val();
+    if (!data) { console.warn('[Firebase] GAGNN_v2/predictions: no data'); return; }
+
+    const timeKey = Object.keys(data)[0];
+    latestPredictions = data[timeKey];
+    latestPredTime    = timeKey.split(' ')[1] || timeKey;
+    console.log(`[Firebase] GAGNN_v2 predictions updated: ${timeKey}`);
+
+    updateWANChart();
+
+    const values = Object.values(latestPredictions || {}).filter(v => typeof v === 'number');
+    const avg = values.length ? values.reduce((a,b) => a+b, 0) / values.length : 0;
+    console.log(`[Firebase] GAGNN prediction avg AQHI: ${avg.toFixed(2)}`);
+
+    const banner = document.getElementById('alert-banner');
+    if (avg > 4.2) {
+        banner.style.display = 'block';
+        banner.innerText = `🚨 GAGNN 警告：預計 ${latestPredTime} 全港 AQHI 將升至 ${avg.toFixed(1)} 級`;
+        console.warn(`[Alert] Avg predicted AQHI=${avg.toFixed(2)} > 4.2 — showing banner`);
+    } else {
+        banner.style.display = 'none';
+    }
+}, err => {
+    console.error('[Firebase] GAGNN_v2 error:', err);
+});
+
+// ── 8c. GAGNN_24hours readings (for WAN chart blue bar fallback) ─────────
+db.ref('GAGNN_24hours/GAGNN_data/readings').on('value', snap => {
+    const data = snap.val();
+    if (data) {
+        latestReadings = data;
+        console.log('[Firebase] GAGNN_24hours readings updated');
+        updateWANChart();
+    }
+}, err => {
+    console.error('[Firebase] GAGNN_24hours error:', err);
+});
+
+// ── 8d. LAN device data (56214328) ──────────────────────────────────────
+db.ref('56214328/latest').on('value', snap => {
+    const d = snap.val();
+    if (!d) { console.warn('[Firebase] 56214328/latest: no data'); return; }
+    console.log('[Firebase] 56214328/latest updated:', d);
+
+    document.getElementById('text_temp').textContent   = d.weather?.temp?.toFixed(1)        ?? '--';
+    document.getElementById('text_hum').textContent    = d.weather?.humidity?.toFixed(1)     ?? '--';
+    document.getElementById('text_mq135').textContent  = d.sensors?.mq135?.norm?.toFixed(4)  ?? '--';
+    document.getElementById('text_mq2').textContent    = d.sensors?.mq2?.norm?.toFixed(4)    ?? '--';
+    document.getElementById('text_mq7').textContent    = d.sensors?.mq7?.norm?.toFixed(4)    ?? '--';
+    document.getElementById('text_time').textContent   = new Date().toLocaleTimeString();
+
+    if (d.geo) {
+        document.getElementById('text_geo').textContent = `${d.geo.lat?.toFixed(4)}, ${d.geo.lng?.toFixed(4)}`;
+    }
+    document.getElementById('p1-live-status').textContent = '實時連接';
+}, err => {
+    console.error('[Firebase] 56214328/latest error:', err);
+    document.getElementById('p1-live-status').textContent = '連接失敗';
+});
+
+db.ref('56214328/ai_analysis').on('value', snap => {
+    const d = snap.val();
+    if (!d) return;
+    console.log('[Firebase] ai_analysis updated:', d);
+
+    const val = d.current_prediction;
+    if (val !== undefined) {
+        document.getElementById('hero_score').textContent = val.toFixed(2);
+        const isHigh = val > 16;
+        document.getElementById('hero_status').textContent   = isHigh ? '⚠️ 結構風險偏高' : '✅ 狀態穩定';
+        document.getElementById('hero_status').style.color   = isHigh ? '#f87171' : '#34d399';
+
+        const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        if (aiChart.data.labels.length > 20) {
+            aiChart.data.labels.shift();
+            aiChart.data.datasets[0].data.shift();
+        }
+        aiChart.data.labels.push(time);
+        aiChart.data.datasets[0].data.push(val);
+        aiChart.update();
     }
 
-    // ==================== 3. 圖表 (已更新為 Bar Chart) ====================
-    const wanChart = new Chart(document.getElementById('wanChart'), {
-        type: 'bar', // 🌟 改成 bar
-        data: { 
-            labels: [], 
-            datasets: [
-                { 
-                    label: '實時 (WAN)', 
-                    data: [], 
-                    backgroundColor: 'rgba(88, 166, 255, 0.85)', // 🌟 藍色柱子，稍微帶點透明度
-                    borderColor: '#58a6ff', 
-                    borderWidth: 1,
-                    borderRadius: 4 // 🌟 加點圓角更好看
-                },
-                { 
-                    label: 'GNN 6h 預測', 
-                    data: [], 
-                    backgroundColor: 'rgba(248, 81, 73, 0.85)', // 🌟 紅色柱子
-                    borderColor: '#f85149', 
-                    borderWidth: 1,
-                    borderRadius: 4
-                }
-            ]
-        },
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false,
-            plugins: { 
-                legend: { 
-                    position: 'top',
-                    labels: { color: '#c9d1d9' } // 🌟 圖例字體配合深色模式
-                } 
-            },
-            scales: {
-                x: { 
-                    ticks: { color: '#c9d1d9', maxRotation: 45, minRotation: 45 },
-                    grid: { color: 'rgba(48, 54, 61, 0.5)' } // 🌟 網格線變暗
-                },
-                y: {
-                    ticks: { color: '#c9d1d9' },
-                    grid: { color: 'rgba(48, 54, 61, 0.5)' }
-                }
-            }
-        }
-    });
-
-    const aiChart = new Chart(document.getElementById('aiChart'), {
-        type: 'line',
-        data: { labels: [], datasets: [{ label: 'Risk Score', data: [], borderColor: '#58a6ff', tension: 0.4 }] },
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: '#c9d1d9' } } },
-            scales: {
-                x: { ticks: { color: '#c9d1d9' }, grid: { color: 'rgba(48, 54, 61, 0.5)' } },
-                y: { ticks: { color: '#c9d1d9' }, grid: { color: 'rgba(48, 54, 61, 0.5)' } }
-            }
-        }
-    });
-
-    // ==================== 更新函數 ====================
-    function updateWANChart() {
-        const stationOrder = [
-            "Causeway_Bay_Roadside", "Central_Roadside", "Central_Western_General",
-            "Eastern_General", "Kwai_Chung_General", "Kwun_Tong_General",
-            "Mong_Kok_Roadside", "North_General", "Sha_Tin_General",
-            "Sham_Shui_Po_General", "Southern_General", "Tai_Po_General",
-            "Tap_Mun_General", "Tseung_Kwan_O_General", "Tsuen_Wan_General",
-            "Tuen_Mun_General", "Tung_Chung_General", "Yuen_Long_General"
-        ];
-
-        const orderedLabels = stationOrder;
-        const blueData = stationOrder.map(k => latestReadings[k] !== undefined ? latestReadings[k] : 0);
-
-        wanChart.data.labels = orderedLabels;
-        wanChart.data.datasets[0].data = blueData;
-
-        if (latestPredictions) {
-            const redData = stationOrder.map(k => latestPredictions[k] !== undefined ? latestPredictions[k] : 0);
-            wanChart.data.datasets[1].data = redData;
-            wanChart.data.datasets[1].label = `GNN 預測 (${latestPredTime})`;
-        }
-
-        wanChart.update();
+    const statusEl = document.getElementById('text_engine_status');
+    if (statusEl) {
+        statusEl.textContent = d.status ?? '--';
+        statusEl.style.color = d.status === 'Danger' ? '#f87171' : '#34d399';
     }
+}, err => {
+    console.error('[Firebase] ai_analysis error:', err);
+});
 
-    // ==================== Firebase 監聽 ====================
-    db.ref('GAGNN_24hours/GAGNN_data/readings').on('value', snap => {
-        const readings = snap.val();
-        if (readings) {
-            latestReadings = readings;
-            console.log("📡 藍線更新 (實時讀數)");
-            updateWANChart();
-        }
+// ── 8e. 56214328 logs → sensor chart ────────────────────────────────────
+db.ref('56214328/logs').orderByKey().limitToLast(30).on('value', snap => {
+    const data = snap.val();
+    if (!data) { console.warn('[Firebase] 56214328/logs: no data'); return; }
+    console.log('[Firebase] 56214328/logs updated, entries:', Object.keys(data).length);
+
+    const entries = Object.values(data).sort((a,b) => a.timestamp - b.timestamp);
+    const labels  = entries.map(e => {
+        const d = new Date(e.iso_time);
+        return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
     });
+    const mq135 = entries.map(e => e.sensors?.mq135?.norm ?? null);
+    const mq2   = entries.map(e => e.sensors?.mq2?.norm   ?? null);
+    const mq7   = entries.map(e => e.sensors?.mq7?.norm   ?? null);
 
-    db.ref('GAGNN_v2/predictions').orderByKey().limitToLast(1).on('value', snap => {
-        const predictions = snap.val();
-        if (predictions) {
-            const timeKey = Object.keys(predictions)[0];
-            latestPredictions = predictions[timeKey];
-            latestPredTime = timeKey.split(' ')[1] || timeKey;
-            
-            console.log(`📈 紅線更新：預測時間 ${timeKey}`);
-            updateWANChart();
+    sensorChart.data.labels = labels;
+    sensorChart.data.datasets[0].data = mq135;
+    sensorChart.data.datasets[1].data = mq2;
+    sensorChart.data.datasets[2].data = mq7;
+    sensorChart.update();
+}, err => {
+    console.error('[Firebase] 56214328/logs error:', err);
+});
 
-            const orderedValues = Object.values(latestPredictions || {});
-            const avg = orderedValues.length ? 
-                orderedValues.reduce((a, b) => a + b, 0) / orderedValues.length : 0;
-            
-            const banner = document.getElementById('alert-banner');
-            if (avg > 4.2) {
-                banner.style.display = 'block';
-                banner.innerText = `🚨 GNN 警告：預計 ${latestPredTime} 全港 AQHI 將上升至 ${avg.toFixed(1)} 級`;
-            } else {
-                banner.style.display = 'none';
-            }
-        }
-    });
+// ── 8f. test_esp32 ───────────────────────────────────────────────────────
+db.ref('test_esp32/latest').on('value', snap => {
+    const val = snap.val();
+    console.log('[Firebase] test_esp32/latest:', val);
+    const el = document.getElementById('p1-esp32-msg');
+    if (el) el.textContent = val ?? '(無數據)';
+}, err => {
+    console.error('[Firebase] test_esp32 error:', err);
+});
 
-    db.ref('56214328/latest').on('value', snap => {
-        const d = snap.val();
-        if (d) {
-            document.getElementById('text_temp').innerText = d.weather?.temp?.toFixed(1) || '--';
-            document.getElementById('text_hum').innerText = d.weather?.humidity?.toFixed(1) || '--';
-            document.getElementById('text_mq135').innerText = d.sensors?.mq135?.norm?.toFixed(3) || '--';
-            document.getElementById('text_time').innerText = new Date().toLocaleTimeString();
-        }
-    });
-
-    db.ref('56214328/ai_analysis/current_prediction').on('value', snap => {
-        const val = snap.val();
-        if (val) {
-            document.getElementById('hero_score').innerText = val.toFixed(2);
-            document.getElementById('hero_status').innerText = val > 16 ? "⚠️ 結構風險偏高" : "✅ 狀態穩定";
-            document.getElementById('hero_status').style.color = val > 16 ? '#f85149' : '#3fb950';
-            const time = new Date().toLocaleTimeString([], {minute:'2-digit', second:'2-digit'});
-            if (aiChart.data.labels.length > 15) { aiChart.data.labels.shift(); aiChart.data.datasets[0].data.shift(); }
-            aiChart.data.labels.push(time); aiChart.data.datasets[0].data.push(val);
-            aiChart.update();
-        }
-    });
+console.log('[App] All Firebase listeners registered. BuildTech Monitor ready.');
 </script>
 </body>
 </html>
