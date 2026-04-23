@@ -234,7 +234,6 @@
             margin-bottom: 8px;
         }
 
-        /* District nav menu */
         .nav-menu {
             position: absolute;
             top: 10px; left: 10px;
@@ -268,7 +267,6 @@
         }
         .nav-btn:hover { background: rgba(56,189,248,0.2); color: var(--blue); border-color: var(--border-strong); }
 
-        /* Info panel that appears on 3D map */
         #map-info-panel {
             position: absolute;
             top: 10px; right: 10px;
@@ -287,7 +285,6 @@
         .panel-row { display: flex; justify-content: space-between; padding: 3px 0; color: var(--muted); }
         .panel-row span { color: var(--text); }
 
-        /* Wind arrow overlay */
         .wind-badge {
             position: absolute;
             bottom: 14px; right: 14px;
@@ -306,10 +303,8 @@
         }
         .wind-badge .title { color: var(--blue); font-weight: 700; font-size: 0.72rem; margin-bottom: 2px; }
 
-        /* Cesium UI overrides */
         .cesium-widget-credits { display: none !important; }
 
-        /* ── AQHI Colour scale chip ───────────────────────────────── */
         .aqhi-chip {
             display: inline-block;
             padding: 1px 7px;
@@ -319,7 +314,6 @@
             color: #fff;
         }
 
-        /* ── Scrollbar (page 1/2) ─────────────────────────────────── */
         .page::-webkit-scrollbar { width: 5px; }
         .page::-webkit-scrollbar-track { background: transparent; }
         .page::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
@@ -340,46 +334,62 @@
             <span class="live-dot" id="p1-live-status">實時連接中</span>
         </div>
 
-        <!-- LAN Structural Risk Card -->
+        <!-- LAN Air Monitor Card — reads from air_monitor/latest/ -->
         <div class="card">
             <div class="hero-label">LAN · 實時結構風險預測指數 (BuildTech-LAN-GNN)</div>
             <div class="hero-score-wrap">
+                <!-- risk_score from air_monitor/latest/risk_score -->
                 <div class="hero-score" id="hero_score">---</div>
+                <!-- risk_tag from air_monitor/latest/risk_tag -->
                 <div class="hero-status" id="hero_status">數據連接中...</div>
             </div>
             <div class="info-grid">
+                <!-- temperature from air_monitor/latest/temperature -->
                 <div class="info-item">
                     <div class="info-label">🌡️ 溫度</div>
                     <div class="info-value"><span id="text_temp">--</span> °C</div>
                 </div>
+                <!-- humidity from air_monitor/latest/humidity -->
                 <div class="info-item">
                     <div class="info-label">💧 濕度</div>
                     <div class="info-value"><span id="text_hum">--</span> %</div>
                 </div>
+                <!-- mq135_raw from air_monitor/latest/mq135_raw -->
                 <div class="info-item">
-                    <div class="info-label">🌫️ MQ-135 (norm)</div>
+                    <div class="info-label">🌫️ MQ-135 (raw)</div>
                     <div class="info-value"><span id="text_mq135">--</span></div>
                 </div>
+                <!-- mq2_raw from air_monitor/latest/mq2_raw -->
                 <div class="info-item">
-                    <div class="info-label">🧪 MQ-2 (norm)</div>
+                    <div class="info-label">🧪 MQ-2 (raw)</div>
                     <div class="info-value"><span id="text_mq2">--</span></div>
                 </div>
+                <!-- mq7_raw from air_monitor/latest/mq7_raw -->
                 <div class="info-item">
-                    <div class="info-label">☁️ MQ-7 (norm)</div>
+                    <div class="info-label">☁️ MQ-7 (raw)</div>
                     <div class="info-value"><span id="text_mq7">--</span></div>
                 </div>
+                <!-- air_quality from air_monitor/latest/air_quality -->
                 <div class="info-item">
-                    <div class="info-label">🔔 GNN 引擎狀態</div>
-                    <div class="info-value" id="text_engine_status">--</div>
+                    <div class="info-label">🔬 空氣質素</div>
+                    <div class="info-value" id="text_air_quality">--</div>
                 </div>
+                <!-- dew_point from air_monitor/latest/dew_point -->
                 <div class="info-item">
-                    <div class="info-label">📍 感應器位置</div>
-                    <div class="info-value"><span id="text_geo">--</span></div>
+                    <div class="info-label">🌊 露點溫度</div>
+                    <div class="info-value"><span id="text_dew_point">--</span> °C</div>
                 </div>
+                <!-- heat_index from air_monitor/latest/heat_index -->
                 <div class="info-item">
-                    <div class="info-label">🕒 最後更新</div>
-                    <div class="info-value"><span id="text_time">--</span></div>
+                    <div class="info-label">🔥 熱指數</div>
+                    <div class="info-value"><span id="text_heat_index">--</span> °C</div>
                 </div>
+            </div>
+            <!-- recommendation from air_monitor/latest/recommendation -->
+            <div style="font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--amber);
+                        background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.2);
+                        border-radius:8px; padding:10px 14px; margin-top:4px; line-height:1.5;">
+                💡 <span id="text_recommendation">--</span>
             </div>
         </div>
 
@@ -390,7 +400,7 @@
                 <span class="data-tag" id="p1-aqhi-time">載入中...</span>
             </div>
             <div class="stats-row" id="p1-aqhi-grid">
-                <!-- populated by JS -->
+                <!-- populated by JS from aqhi_history/latest -->
             </div>
         </div>
 
@@ -422,29 +432,33 @@
             <span class="live-dot" id="p2-update-time">更新中...</span>
         </div>
 
-        <!-- WAN Bar Chart -->
+        <!--
+            WAN 4-Bar Chart
+            Datasets:
+              [0] 即時 AQHI        ← aqhi_history (last record)
+              [1] GAGNN +3h 預測   ← GAGNN_v3/latest/horizons/3h/<district>
+              [2] GAGNN +6h 預測   ← GAGNN_v3/latest/horizons/6h/<district>
+              [3] GAGNN +24h 預測  ← GAGNN_v3/latest/horizons/24h/<district>
+        -->
         <div class="card">
             <div class="chart-header">
-                <h4>🗺️ 18區 AQHI — 即時 vs GAGNN 6h 預測 (WAN · Firebase)</h4>
-                <span class="data-tag">aqhi_history / latest</span>
+                <h4>🗺️ 18區 AQHI — 即時 vs GAGNN 3h / 6h / 24h 預測 (WAN · Firebase)</h4>
+                <span class="data-tag">GAGNN_v3 / latest</span>
             </div>
-            <div style="height:300px;"><canvas id="wanChart"></canvas></div>
+            <div style="height:340px;"><canvas id="wanChart"></canvas></div>
         </div>
 
-        <!-- LAN AI prediction history (line chart) -->
-        <div class="card">
-            <div class="chart-header">
-                <h4>📈 LAN 實時結構風險預測歷史 (BuildTech-LAN-GNN)</h4>
-                <span class="data-tag">56214328 / ai_analysis</span>
-            </div>
-            <div style="height:220px;"><canvas id="aiChart"></canvas></div>
-        </div>
-
-        <!-- ESP32 raw sensor history -->
+        <!--
+            LAN Sensor Chart
+            Source: air_monitor/latest/
+              mq135_raw, mq2_raw, mq7_raw
+            Displayed as 3-line chart showing current snapshot values.
+            (No historical log path exists in air_monitor; values refresh in real-time.)
+        -->
         <div class="card">
             <div class="chart-header">
                 <h4>🔬 LAN 感應器歷史記錄 (MQ-135 / MQ-2 / MQ-7)</h4>
-                <span class="data-tag">56214328 / logs</span>
+                <span class="data-tag">air_monitor / latest</span>
             </div>
             <div style="height:220px;"><canvas id="sensorChart"></canvas></div>
         </div>
@@ -465,10 +479,8 @@
         </div>
 
         <div class="card" style="padding:0; position:relative; flex-grow:1; overflow:hidden;">
-            <!-- District navigation -->
             <div class="nav-menu" id="location-list"></div>
 
-            <!-- Selected station info panel -->
             <div id="map-info-panel">
                 <h5 id="panel-name">—</h5>
                 <div class="panel-row">AQHI <span id="panel-aqhi">--</span></div>
@@ -478,7 +490,6 @@
                 <div class="panel-row">颱風 <span id="panel-cyclone">--</span></div>
             </div>
 
-            <!-- Avg wind summary badge -->
             <div class="wind-badge" id="wind-badge">
                 <div class="title">🌬️ 全港平均氣象</div>
                 <div>濕度：<span id="avg-hum" style="color:var(--blue);">--</span> %</div>
@@ -518,7 +529,7 @@ function showPage(pageId) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// 2. STATION DEFINITIONS
+// 2. STATION DEFINITIONS  (aligned with DISTRICTS list in gnn_main.py)
 // ══════════════════════════════════════════════════════════════════════════
 const stations = [
     { name:"中西區",  key:"Central_Western",  lon:114.1461, lat:22.2859, humStn:["HKO","CCH"],  windStn:["HKS","SC"]  },
@@ -541,7 +552,32 @@ const stations = [
     { name:"旺角",    key:"Mong Kok",          lon:114.1685, lat:22.3225, humStn:["HKO","YCT"],  windStn:["CCB","CCH"] }
 ];
 
-// AQHI key variants in Firebase
+// ── District key lookup helpers ──────────────────────────────────────────
+// gnn_main writes GAGNN_v3/latest/horizons/{3h|6h|24h} with keys like
+// "Central/Western", "Causeway Bay" etc. (the raw DISTRICTS list values).
+// This map converts station.key (underscore form) → raw district name.
+const KEY_TO_DISTRICT = {
+    "Central_Western": "Central/Western",
+    "Eastern":         "Eastern",
+    "Kwun Tong":       "Kwun Tong",
+    "Sham Shui Po":    "Sham Shui Po",
+    "Kwai Chung":      "Kwai Chung",
+    "Tsuen Wan":       "Tsuen Wan",
+    "Yuen Long":       "Yuen Long",
+    "Tuen Mun":        "Tuen Mun",
+    "Tung Chung":      "Tung Chung",
+    "Tai Po":          "Tai Po",
+    "Sha Tin":         "Sha Tin",
+    "Tap Mun":         "Tap Mun",
+    "Causeway Bay":    "Causeway Bay",
+    "Central":         "Central",
+    "Mong Kok":        "Mong Kok",
+    "Tseung Kwan O":   "Tseung Kwan O",
+    "Southern":        "Southern",
+    "North":           "North",
+};
+
+// Return AQHI from aqhi_history record, trying several key variants
 function getAqhiKeys(s) {
     return [
         `AQHI_${s.key}`,
@@ -553,59 +589,53 @@ function getAqhiKeys(s) {
 // ══════════════════════════════════════════════════════════════════════════
 // 3. SHARED DATA STORE
 // ══════════════════════════════════════════════════════════════════════════
-let latestAqhiRecord = {};   // latest aqhi_history record (full object)
-let latestReadings   = {};   // GAGNN_24hours readings
-let latestPredictions = null;
-let latestPredTime   = '';
+let latestAqhiRecord  = {};   // from aqhi_history (last record)
+let latestPred3h      = {};   // from GAGNN_v3/latest/horizons/3h
+let latestPred6h      = {};   // from GAGNN_v3/latest/horizons/6h
+let latestPred24h     = {};   // from GAGNN_v3/latest/horizons/24h
+let latestPredTime    = '';   // from GAGNN_v3/latest/timestamp
 
-// Helper — mean of a list of values
+// Sensor rolling buffer (populated from air_monitor/latest on each update)
+const sensorBuffer = { labels: [], mq135: [], mq2: [], mq7: [] };
+const SENSOR_MAX   = 30;  // keep last 30 data points
+
 function mean(arr) {
-    const filtered = arr.filter(v => v !== undefined && v !== null && !isNaN(v));
-    return filtered.length ? filtered.reduce((a,b) => a+b, 0) / filtered.length : null;
+    const f = arr.filter(v => v !== undefined && v !== null && !isNaN(v));
+    return f.length ? f.reduce((a,b) => a+b, 0) / f.length : null;
 }
 
-// Get AQHI for station from Firebase record
 function getAqhi(record, s) {
     for (const k of getAqhiKeys(s)) {
         if (record[k] !== undefined) return record[k];
     }
     return null;
 }
-
-// Get mean humidity for station
-function getHum(record, s) {
-    return mean(s.humStn.map(code => record[`HUM_${code}`]));
-}
-
-// Get mean wind speed
-function getWspd(record, s) {
-    return mean(s.windStn.map(code => record[`WSPD_${code}`]));
-}
-
-// Get mean wind direction (circular)
+function getHum(record, s)  { return mean(s.humStn.map(code => record[`HUM_${code}`])); }
+function getWspd(record, s) { return mean(s.windStn.map(code => record[`WSPD_${code}`])); }
 function getWdir(record, s) {
     const dirs = s.windStn.map(code => record[`PDIR_${code}`]).filter(v => v !== undefined);
     if (!dirs.length) return null;
-    // circular mean
-    const sinMean = mean(dirs.map(d => Math.sin(d * Math.PI / 180)));
-    const cosMean = mean(dirs.map(d => Math.cos(d * Math.PI / 180)));
-    let deg = Math.atan2(sinMean, cosMean) * 180 / Math.PI;
-    return ((deg % 360) + 360) % 360;
+    const sinM = mean(dirs.map(d => Math.sin(d * Math.PI / 180)));
+    const cosM = mean(dirs.map(d => Math.cos(d * Math.PI / 180)));
+    return ((Math.atan2(sinM, cosM) * 180 / Math.PI) % 360 + 360) % 360;
 }
-
-// Wind direction to compass label
 function degToCompass(deg) {
     if (deg === null || deg === undefined) return '--';
     const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
     return dirs[Math.round(deg / 22.5) % 16];
 }
-
-// AQHI colour
 function aqhiColor(v) {
     if (v <= 3)  return '#34d399';
     if (v <= 6)  return '#fbbf24';
     if (v <= 10) return '#f87171';
     return '#dc2626';
+}
+// Return GAGNN predicted AQHI for a station from a horizon object
+function getPredAqhi(horizonObj, s) {
+    // gnn_main writes district keys as-is from DISTRICTS list
+    // e.g. "Central/Western", "Causeway Bay" etc.
+    const districtName = KEY_TO_DISTRICT[s.key] || s.key;
+    return horizonObj[districtName] ?? horizonObj[s.key] ?? null;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -614,40 +644,65 @@ function aqhiColor(v) {
 Chart.defaults.color = '#64748b';
 Chart.defaults.font.family = "'JetBrains Mono', monospace";
 Chart.defaults.font.size   = 10;
-
 const gridColor = 'rgba(56,189,248,0.07)';
 
+// ── WAN Chart: 4 datasets (Realtime / +3h / +6h / +24h) ─────────────────
 const wanChart = new Chart(document.getElementById('wanChart'), {
     type: 'bar',
     data: {
         labels: [],
         datasets: [
             {
-                label: '即時 AQHI (aqhi_history)',
+                label: '即時 AQHI',
                 data: [],
+                // colour-mapped per bar based on AQHI level
                 backgroundColor: ctx => {
                     const v = ctx.dataset.data[ctx.dataIndex];
-                    return v <= 3 ? 'rgba(52,211,153,0.75)' : v <= 6 ? 'rgba(251,191,36,0.75)' : 'rgba(248,113,113,0.75)';
+                    return v <= 3 ? 'rgba(52,211,153,0.80)'
+                         : v <= 6 ? 'rgba(251,191,36,0.80)'
+                         :          'rgba(248,113,113,0.80)';
                 },
                 borderColor: 'transparent',
-                borderRadius: 4,
+                borderRadius: 3,
                 order: 1
             },
             {
-                label: 'GAGNN 6h 預測',
+                label: 'GAGNN +3h',
+                data: [],
+                backgroundColor: 'rgba(56,189,248,0.55)',
+                borderColor: '#38bdf8',
+                borderWidth: 1,
+                borderRadius: 3,
+                order: 2
+            },
+            {
+                label: 'GAGNN +6h',
                 data: [],
                 backgroundColor: 'rgba(248,81,73,0.55)',
                 borderColor: '#f85149',
                 borderWidth: 1,
-                borderRadius: 4,
-                order: 2
+                borderRadius: 3,
+                order: 3
+            },
+            {
+                label: 'GAGNN +24h',
+                data: [],
+                backgroundColor: 'rgba(251,191,36,0.55)',
+                borderColor: '#fbbf24',
+                borderWidth: 1,
+                borderRadius: 3,
+                order: 4
             }
         ]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#94a3b8', font:{size:10} } } },
+        plugins: {
+            legend: {
+                labels: { color: '#94a3b8', font:{size:10}, boxWidth: 12 }
+            }
+        },
         scales: {
             x: { ticks: { color:'#64748b', maxRotation:45, minRotation:45 }, grid: { color:gridColor } },
             y: { min:0, max:11, ticks: { color:'#64748b', stepSize:1 }, grid: { color:gridColor } }
@@ -655,44 +710,21 @@ const wanChart = new Chart(document.getElementById('wanChart'), {
     }
 });
 
-const aiChart = new Chart(document.getElementById('aiChart'), {
-    type: 'line',
-    data: {
-        labels: [],
-        datasets: [{
-            label: 'LAN 風險指數',
-            data: [],
-            borderColor: '#38bdf8',
-            backgroundColor: 'rgba(56,189,248,0.06)',
-            tension: 0.4,
-            fill: true,
-            pointRadius: 3,
-            pointBackgroundColor: '#38bdf8'
-        }]
-    },
-    options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color:'#94a3b8' } } },
-        scales: {
-            x: { ticks: { color:'#64748b' }, grid: { color:gridColor } },
-            y: { ticks: { color:'#64748b' }, grid: { color:gridColor } }
-        }
-    }
-});
-
+// ── Sensor Chart: MQ-135 / MQ-2 / MQ-7 raw values (rolling buffer) ──────
+// Source: air_monitor/latest  (appended each time listener fires)
 const sensorChart = new Chart(document.getElementById('sensorChart'), {
     type: 'line',
     data: {
         labels: [],
         datasets: [
-            { label:'MQ-135', data:[], borderColor:'#38bdf8', tension:0.3, pointRadius:2 },
-            { label:'MQ-2',   data:[], borderColor:'#34d399', tension:0.3, pointRadius:2 },
-            { label:'MQ-7',   data:[], borderColor:'#fbbf24', tension:0.3, pointRadius:2 }
+            { label:'MQ-135 (raw)', data:[], borderColor:'#38bdf8', backgroundColor:'rgba(56,189,248,0.06)', tension:0.3, pointRadius:2, fill:true },
+            { label:'MQ-2 (raw)',   data:[], borderColor:'#34d399', backgroundColor:'rgba(52,211,153,0.06)', tension:0.3, pointRadius:2, fill:true },
+            { label:'MQ-7 (raw)',   data:[], borderColor:'#fbbf24', backgroundColor:'rgba(251,191,36,0.06)', tension:0.3, pointRadius:2, fill:true }
         ]
     },
     options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color:'#94a3b8' } } },
+        plugins: { legend: { labels: { color:'#94a3b8', boxWidth:12 } } },
         scales: {
             x: { ticks: { color:'#64748b', maxRotation:45 }, grid: { color:gridColor } },
             y: { ticks: { color:'#64748b' }, grid: { color:gridColor } }
@@ -707,8 +739,7 @@ function renderPage1AqhiGrid(record) {
     const grid = document.getElementById('p1-aqhi-grid');
     if (!grid) return;
     grid.innerHTML = '';
-    // show first 8 stations as mini stats
-    stations.slice(0,8).forEach(s => {
+    stations.slice(0, 8).forEach(s => {
         const val = getAqhi(record, s);
         const div = document.createElement('div');
         div.className = 'stat-mini';
@@ -718,64 +749,40 @@ function renderPage1AqhiGrid(record) {
         `;
         grid.appendChild(div);
     });
-
-    // time tag
     const timeEl = document.getElementById('p1-aqhi-time');
     if (timeEl && record.Date) timeEl.textContent = record.Date;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// 6. WAN CHART UPDATE
+// 6. WAN CHART UPDATE  (4 bars: realtime + 3h + 6h + 24h)
 // ══════════════════════════════════════════════════════════════════════════
 function updateWANChart() {
-    // Labels = short Chinese names
-    const labels = stations.map(s => s.name);
+    const labels  = stations.map(s => s.name);
 
-    // Blue bars — from aqhi_history Firebase
-    const blueData = stations.map(s => getAqhi(latestAqhiRecord, s) ?? 0);
+    // Dataset 0: realtime from aqhi_history
+    const realData  = stations.map(s => getAqhi(latestAqhiRecord, s) ?? 0);
 
-    // Red bars — from GAGNN_24hours predictions (keyed differently)
-    const stationKeyMap = {
-        "Causeway_Bay_Roadside":    stations.find(s=>s.key==="Causeway Bay"),
-        "Central_Roadside":         stations.find(s=>s.key==="Central"),
-        "Central_Western_General":  stations.find(s=>s.key==="Central_Western"),
-        "Eastern_General":          stations.find(s=>s.key==="Eastern"),
-        "Kwai_Chung_General":       stations.find(s=>s.key==="Kwai Chung"),
-        "Kwun_Tong_General":        stations.find(s=>s.key==="Kwun Tong"),
-        "Mong_Kok_Roadside":        stations.find(s=>s.key==="Mong Kok"),
-        "North_General":            stations.find(s=>s.key==="North"),
-        "Sha_Tin_General":          stations.find(s=>s.key==="Sha Tin"),
-        "Sham_Shui_Po_General":     stations.find(s=>s.key==="Sham Shui Po"),
-        "Southern_General":         stations.find(s=>s.key==="Southern"),
-        "Tai_Po_General":           stations.find(s=>s.key==="Tai Po"),
-        "Tap_Mun_General":          stations.find(s=>s.key==="Tap Mun"),
-        "Tseung_Kwan_O_General":    stations.find(s=>s.key==="Tseung Kwan O"),
-        "Tsuen_Wan_General":        stations.find(s=>s.key==="Tsuen Wan"),
-        "Tuen_Mun_General":         stations.find(s=>s.key==="Tuen Mun"),
-        "Tung_Chung_General":       stations.find(s=>s.key==="Tung Chung"),
-        "Yuen_Long_General":        stations.find(s=>s.key==="Yuen Long"),
-    };
-
-    let redData = new Array(stations.length).fill(0);
-    if (latestPredictions) {
-        Object.entries(latestPredictions).forEach(([predKey, val]) => {
-            const station = stationKeyMap[predKey];
-            if (station) {
-                const idx = stations.indexOf(station);
-                if (idx !== -1) redData[idx] = val;
-            }
-        });
-    }
+    // Datasets 1/2/3: GAGNN predictions from GAGNN_v3/latest/horizons/{3h|6h|24h}
+    // gnn_main writes district keys as the raw DISTRICTS name (e.g. "Central/Western")
+    const pred3hData  = stations.map(s => getPredAqhi(latestPred3h,  s) ?? 0);
+    const pred6hData  = stations.map(s => getPredAqhi(latestPred6h,  s) ?? 0);
+    const pred24hData = stations.map(s => getPredAqhi(latestPred24h, s) ?? 0);
 
     wanChart.data.labels = labels;
-    wanChart.data.datasets[0].data = blueData;
-    wanChart.data.datasets[1].data = redData;
-    if (latestPredTime) {
-        wanChart.data.datasets[1].label = `GAGNN 預測 (${latestPredTime})`;
-    }
-    wanChart.update();
+    wanChart.data.datasets[0].data = realData;
+    wanChart.data.datasets[1].data = pred3hData;
+    wanChart.data.datasets[2].data = pred6hData;
+    wanChart.data.datasets[3].data = pred24hData;
 
-    console.log('[WanChart] Updated. Blue (real):', blueData, '| Red (pred):', redData);
+    if (latestPredTime) {
+        wanChart.data.datasets[1].label = `GAGNN +3h (${latestPredTime})`;
+        wanChart.data.datasets[2].label = `GAGNN +6h (${latestPredTime})`;
+        wanChart.data.datasets[3].label = `GAGNN +24h (${latestPredTime})`;
+    }
+
+    wanChart.update();
+    console.log('[WanChart] Updated. Real:', realData, '| +3h:', pred3hData,
+                '| +6h:', pred6hData, '| +24h:', pred24hData);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -796,12 +803,10 @@ async function initCesium() {
         });
         viewer.scene.primitives.add(await Cesium.createOsmBuildingsAsync());
 
-        // Camera controls
         const ctrl = viewer.scene.screenSpaceCameraController;
         ctrl.enableLook = false;
         ctrl.tiltEventTypes = [Cesium.CameraEventType.RIGHT_DRAG];
 
-        // Build nav buttons
         const menu = document.getElementById('location-list');
         stations.forEach(s => {
             const btn = document.createElement('button');
@@ -814,7 +819,6 @@ async function initCesium() {
             menu.appendChild(btn);
         });
 
-        // Click on entity
         viewer.screenSpaceEventHandler.setInputAction(movement => {
             const picked = viewer.scene.pick(movement.position);
             if (Cesium.defined(picked) && picked.id && picked.id._stationData) {
@@ -822,9 +826,7 @@ async function initCesium() {
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-        // Render markers from last known data
         updateCesiumMarkers();
-
         viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(114.17, 22.33, 28000) });
         console.log('[Cesium] Initialised successfully');
     } catch (e) {
@@ -836,7 +838,6 @@ function updateCesiumMarkers() {
     if (!viewer) return;
     const record = latestAqhiRecord;
 
-    // Compute global avg humidity, wind speed
     let allHum = [], allWspd = [];
     stations.forEach(s => {
         const h = getHum(record, s);
@@ -847,17 +848,18 @@ function updateCesiumMarkers() {
     const avgHum  = mean(allHum);
     const avgWspd = mean(allWspd);
 
-    document.getElementById('avg-hum').textContent    = avgHum  !== null ? avgHum.toFixed(0)  : '--';
-    document.getElementById('avg-wspd').textContent   = avgWspd !== null ? avgWspd.toFixed(1) : '--';
+    document.getElementById('avg-hum').textContent     = avgHum  !== null ? avgHum.toFixed(0)  : '--';
+    document.getElementById('avg-wspd').textContent    = avgWspd !== null ? avgWspd.toFixed(1) : '--';
     document.getElementById('avg-cyclone').textContent = record.Cyclone_Present ? '⚠️ 是' : '否';
-    document.getElementById('data-date').textContent  = record.Date || '--';
+    document.getElementById('data-date').textContent   = record.Date || '--';
 
     stations.forEach(s => {
-        const aqhi  = getAqhi(record, s);
-        const hum   = getHum(record, s);
-        const wspd  = getWspd(record, s);
-        const wdir  = getWdir(record, s);
-        const wdirLabel = degToCompass(wdir);
+        const aqhi       = getAqhi(record, s);
+        const hum        = getHum(record, s);
+        const wspd       = getWspd(record, s);
+        const wdir       = getWdir(record, s);
+        const wdirLabel  = degToCompass(wdir);
+        const heightScale = aqhi ? aqhi * 120 : 200;
 
         const color = aqhi !== null
             ? (aqhi >= 7 ? Cesium.Color.fromCssColorString('#f87171')
@@ -865,21 +867,18 @@ function updateCesiumMarkers() {
              :             Cesium.Color.fromCssColorString('#34d399'))
             : Cesium.Color.GRAY;
 
-        // Pillar height scales with AQHI
-        const heightScale = aqhi ? aqhi * 120 : 200;
-
         const labelText =
             `${s.name}\n` +
             `AQHI: ${aqhi ?? '--'}\n` +
-            `濕度: ${hum !== null ? hum.toFixed(0)+'%' : '--'}\n` +
+            `濕度: ${hum  !== null ? hum.toFixed(0)+'%'     : '--'}\n` +
             `風向: ${wdir !== null ? wdir.toFixed(0)+'° '+wdirLabel : '--'}\n` +
-            `風速: ${wspd !== null ? wspd.toFixed(1)+' km/h' : '--'}`;
+            `風速: ${wspd !== null ? wspd.toFixed(1)+' km/h': '--'}`;
 
         if (stationEntities[s.name]) {
             const ent = stationEntities[s.name];
-            ent.ellipsoid.radii = new Cesium.Cartesian3(400, 400, heightScale);
+            ent.ellipsoid.radii    = new Cesium.Cartesian3(400, 400, heightScale);
             ent.ellipsoid.material = color.withAlpha(0.65);
-            ent.label.text = labelText;
+            ent.label.text         = labelText;
             console.log(`[Cesium] Updated marker: ${s.name} AQHI=${aqhi} wspd=${wspd} wdir=${wdir}`);
         } else if (viewer) {
             const entity = viewer.entities.add({
@@ -912,15 +911,15 @@ function updateCesiumMarkers() {
 
 function showStationPanel(s) {
     const record = latestAqhiRecord;
-    document.getElementById('panel-name').textContent   = s.name;
-    document.getElementById('panel-aqhi').textContent   = getAqhi(record, s) ?? '--';
-    const hum   = getHum(record, s);
-    const wspd  = getWspd(record, s);
-    const wdir  = getWdir(record, s);
-    document.getElementById('panel-hum').textContent    = hum   !== null ? hum.toFixed(0)+'%'       : '--';
-    document.getElementById('panel-wdir').textContent   = wdir  !== null ? wdir.toFixed(0)+'° '+degToCompass(wdir) : '--';
-    document.getElementById('panel-wspd').textContent   = wspd  !== null ? wspd.toFixed(1)+' km/h'  : '--';
-    document.getElementById('panel-cyclone').textContent = record.Cyclone_Present ? '⚠️ 是' : '否';
+    document.getElementById('panel-name').textContent     = s.name;
+    document.getElementById('panel-aqhi').textContent     = getAqhi(record, s) ?? '--';
+    const hum  = getHum(record, s);
+    const wspd = getWspd(record, s);
+    const wdir = getWdir(record, s);
+    document.getElementById('panel-hum').textContent      = hum  !== null ? hum.toFixed(0)+'%'     : '--';
+    document.getElementById('panel-wdir').textContent     = wdir !== null ? wdir.toFixed(0)+'° '+degToCompass(wdir) : '--';
+    document.getElementById('panel-wspd').textContent     = wspd !== null ? wspd.toFixed(1)+' km/h': '--';
+    document.getElementById('panel-cyclone').textContent  = record.Cyclone_Present ? '⚠️ 是' : '否';
     document.getElementById('map-info-panel').classList.add('visible');
     console.log(`[Panel] Showing info for: ${s.name}`);
 }
@@ -929,8 +928,8 @@ function showStationPanel(s) {
 // 8. FIREBASE LISTENERS
 // ══════════════════════════════════════════════════════════════════════════
 
-// ── 8a. aqhi_history — latest entry ─────────────────────────────────────
-// We order by key and take last 1 record to get the most recent timestamp
+// ── 8a. aqhi_history — latest entry (WAN real-time AQHI) ─────────────────
+// Path: aqhi_history/<YYYY-MM-DD_HH-MM>/{AQHI_*, HUM_*, PDIR_*, WSPD_*, ...}
 db.ref('aqhi_history').orderByKey().limitToLast(1).on('value', snap => {
     const data = snap.val();
     if (!data) {
@@ -941,143 +940,147 @@ db.ref('aqhi_history').orderByKey().limitToLast(1).on('value', snap => {
     latestAqhiRecord = data[timeKey];
     console.log(`[Firebase] aqhi_history updated: ${timeKey}`, latestAqhiRecord);
 
-    // Update time displays
     const timeStr = latestAqhiRecord.Date || timeKey;
-    const el = document.getElementById('last_update_time');
-    if (el) el.textContent = `數據時間：${timeStr}`;
+    const el  = document.getElementById('last_update_time');
     const p2el = document.getElementById('p2-update-time');
+    if (el)   el.textContent  = `數據時間：${timeStr}`;
     if (p2el) p2el.textContent = timeStr;
 
-    // Update page 1 mini grid
     renderPage1AqhiGrid(latestAqhiRecord);
-
-    // Update WAN chart
     updateWANChart();
-
-    // Update 3D map markers if open
     updateCesiumMarkers();
 }, err => {
     console.error('[Firebase] aqhi_history error:', err);
 });
 
-// ── 8b. GAGNN predictions ────────────────────────────────────────────────
-db.ref('GAGNN_v2/predictions').orderByKey().limitToLast(1).on('value', snap => {
+// ── 8b. GAGNN_v3/latest — 3h / 6h / 24h predictions from gnn_main.py ────
+// Path: GAGNN_v3/latest/
+//   timestamp: "2026-04-21 12:05"
+//   horizons/3h:  { "Central/Western": 3, "Causeway Bay": 4, ... }
+//   horizons/6h:  { "Central/Western": 3, "Causeway Bay": 5, ... }
+//   horizons/24h: { "Central/Western": 4, "Causeway Bay": 6, ... }
+//   averages/3h, averages/6h, averages/24h
+db.ref('GAGNN_v3/latest').on('value', snap => {
     const data = snap.val();
-    if (!data) { console.warn('[Firebase] GAGNN_v2/predictions: no data'); return; }
+    if (!data) {
+        console.warn('[Firebase] GAGNN_v3/latest: no data');
+        return;
+    }
+    console.log('[Firebase] GAGNN_v3/latest updated:', data);
 
-    const timeKey = Object.keys(data)[0];
-    latestPredictions = data[timeKey];
-    latestPredTime    = timeKey.split(' ')[1] || timeKey;
-    console.log(`[Firebase] GAGNN_v2 predictions updated: ${timeKey}`);
+    const horizons = data.horizons || {};
+    latestPred3h   = horizons['3h']  || {};
+    latestPred6h   = horizons['6h']  || {};
+    latestPred24h  = horizons['24h'] || {};
+    latestPredTime = (data.timestamp || '').split(' ')[1] || data.timestamp || '';
+
+    console.log(`[Firebase] Predictions loaded — ts=${data.timestamp}  `
+        + `3h keys=${Object.keys(latestPred3h).length}  `
+        + `6h keys=${Object.keys(latestPred6h).length}  `
+        + `24h keys=${Object.keys(latestPred24h).length}`);
 
     updateWANChart();
 
-    const values = Object.values(latestPredictions || {}).filter(v => typeof v === 'number');
-    const avg = values.length ? values.reduce((a,b) => a+b, 0) / values.length : 0;
-    console.log(`[Firebase] GAGNN prediction avg AQHI: ${avg.toFixed(2)}`);
-
+    // Alert banner: trigger if 6h city average > 4.2
+    const avgs = data.averages || {};
+    const avg6h = avgs['6h'] || 0;
     const banner = document.getElementById('alert-banner');
-    if (avg > 4.2) {
+    if (avg6h > 4.2) {
         banner.style.display = 'block';
-        banner.innerText = `🚨 GAGNN 警告：預計 ${latestPredTime} 全港 AQHI 將升至 ${avg.toFixed(1)} 級`;
-        console.warn(`[Alert] Avg predicted AQHI=${avg.toFixed(2)} > 4.2 — showing banner`);
+        banner.innerText = `🚨 GAGNN 警告：預計 ${latestPredTime} 全港 6h AQHI 均值 ${avg6h.toFixed(1)} 級`;
+        console.warn(`[Alert] avg_6h=${avg6h.toFixed(2)} > 4.2 — showing banner`);
     } else {
         banner.style.display = 'none';
     }
 }, err => {
-    console.error('[Firebase] GAGNN_v2 error:', err);
+    console.error('[Firebase] GAGNN_v3/latest error:', err);
 });
 
-// ── 8c. GAGNN_24hours readings (for WAN chart blue bar fallback) ─────────
-db.ref('GAGNN_24hours/GAGNN_data/readings').on('value', snap => {
-    const data = snap.val();
-    if (data) {
-        latestReadings = data;
-        console.log('[Firebase] GAGNN_24hours readings updated');
-        updateWANChart();
-    }
-}, err => {
-    console.error('[Firebase] GAGNN_24hours error:', err);
-});
-
-// ── 8d. LAN device data (56214328) ──────────────────────────────────────
-db.ref('56214328/latest').on('value', snap => {
+// ── 8c. LAN Air Monitor — air_monitor/latest/ ────────────────────────────
+// Path: air_monitor/latest/
+//   risk_score:    40
+//   risk_tag:      "WARNING"
+//   air_quality:   "POOR"
+//   temperature:   23.7
+//   humidity:      42
+//   dew_point:     10.02
+//   heat_index:    25.25
+//   mq135_raw:     1885
+//   mq135_level:   "POOR"
+//   mq2_raw:       446
+//   mq2_level:     "GOOD"
+//   mq7_raw:       1520
+//   mq7_level:     "POOR"
+//   recommendation:"Ventilate immediately..."
+//   thermal_desc:  "Comfortable temperature and humidity."
+//   timestamp_s:   543
+db.ref('air_monitor/latest').on('value', snap => {
     const d = snap.val();
-    if (!d) { console.warn('[Firebase] 56214328/latest: no data'); return; }
-    console.log('[Firebase] 56214328/latest updated:', d);
-
-    document.getElementById('text_temp').textContent   = d.weather?.temp?.toFixed(1)        ?? '--';
-    document.getElementById('text_hum').textContent    = d.weather?.humidity?.toFixed(1)     ?? '--';
-    document.getElementById('text_mq135').textContent  = d.sensors?.mq135?.norm?.toFixed(4)  ?? '--';
-    document.getElementById('text_mq2').textContent    = d.sensors?.mq2?.norm?.toFixed(4)    ?? '--';
-    document.getElementById('text_mq7').textContent    = d.sensors?.mq7?.norm?.toFixed(4)    ?? '--';
-    document.getElementById('text_time').textContent   = new Date().toLocaleTimeString();
-
-    if (d.geo) {
-        document.getElementById('text_geo').textContent = `${d.geo.lat?.toFixed(4)}, ${d.geo.lng?.toFixed(4)}`;
+    if (!d) {
+        console.warn('[Firebase] air_monitor/latest: no data');
+        return;
     }
+    console.log('[Firebase] air_monitor/latest updated:', d);
+
+    // ── Hero score card (Page 1) ─────────────────────────────────────────
+    const riskScore = d.risk_score ?? '--';
+    const riskTag   = d.risk_tag   ?? '--';
+    document.getElementById('hero_score').textContent = riskScore;
+
+    const isHigh = d.risk_tag === 'DANGER' || d.risk_tag === 'WARNING';
+    const statusEl = document.getElementById('hero_status');
+    statusEl.textContent = isHigh ? `⚠️ ${riskTag}` : `✅ ${riskTag}`;
+    statusEl.style.color = isHigh ? '#f87171' : '#34d399';
+
+    // ── Info grid fields ─────────────────────────────────────────────────
+    document.getElementById('text_temp').textContent        = d.temperature   !== undefined ? d.temperature.toFixed(1)  : '--';
+    document.getElementById('text_hum').textContent         = d.humidity      !== undefined ? d.humidity                : '--';
+    document.getElementById('text_mq135').textContent       = d.mq135_raw     !== undefined ? d.mq135_raw               : '--';
+    document.getElementById('text_mq2').textContent         = d.mq2_raw       !== undefined ? d.mq2_raw                 : '--';
+    document.getElementById('text_mq7').textContent         = d.mq7_raw       !== undefined ? d.mq7_raw                 : '--';
+    document.getElementById('text_air_quality').textContent = d.air_quality   ?? '--';
+    document.getElementById('text_dew_point').textContent   = d.dew_point     !== undefined ? d.dew_point.toFixed(2)   : '--';
+    document.getElementById('text_heat_index').textContent  = d.heat_index    !== undefined ? d.heat_index.toFixed(2)  : '--';
+    document.getElementById('text_recommendation').textContent = d.recommendation ?? '--';
+
+    // Air quality level colour
+    const aqEl = document.getElementById('text_air_quality');
+    if (aqEl) {
+        const aqColour = { 'GOOD':'#34d399', 'MODERATE':'#fbbf24', 'POOR':'#f87171', 'VERY_POOR':'#dc2626' };
+        aqEl.style.color = aqColour[d.air_quality] || '#38bdf8';
+    }
+
+    // live-dot label
     document.getElementById('p1-live-status').textContent = '實時連接';
+
+    // ── Sensor rolling chart ─────────────────────────────────────────────
+    // Push each update into rolling buffer (max SENSOR_MAX points)
+    const timeLabel = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    sensorBuffer.labels.push(timeLabel);
+    sensorBuffer.mq135.push(d.mq135_raw ?? null);
+    sensorBuffer.mq2.push(d.mq2_raw     ?? null);
+    sensorBuffer.mq7.push(d.mq7_raw     ?? null);
+
+    if (sensorBuffer.labels.length > SENSOR_MAX) {
+        sensorBuffer.labels.shift();
+        sensorBuffer.mq135.shift();
+        sensorBuffer.mq2.shift();
+        sensorBuffer.mq7.shift();
+    }
+
+    sensorChart.data.labels             = sensorBuffer.labels;
+    sensorChart.data.datasets[0].data   = sensorBuffer.mq135;
+    sensorChart.data.datasets[1].data   = sensorBuffer.mq2;
+    sensorChart.data.datasets[2].data   = sensorBuffer.mq7;
+    sensorChart.update();
+
+    console.log(`[SensorChart] Updated — MQ135=${d.mq135_raw} MQ2=${d.mq2_raw} MQ7=${d.mq7_raw}  buffer=${sensorBuffer.labels.length}`);
 }, err => {
-    console.error('[Firebase] 56214328/latest error:', err);
+    console.error('[Firebase] air_monitor/latest error:', err);
     document.getElementById('p1-live-status').textContent = '連接失敗';
 });
 
-db.ref('56214328/ai_analysis').on('value', snap => {
-    const d = snap.val();
-    if (!d) return;
-    console.log('[Firebase] ai_analysis updated:', d);
-
-    const val = d.current_prediction;
-    if (val !== undefined) {
-        document.getElementById('hero_score').textContent = val.toFixed(2);
-        const isHigh = val > 16;
-        document.getElementById('hero_status').textContent   = isHigh ? '⚠️ 結構風險偏高' : '✅ 狀態穩定';
-        document.getElementById('hero_status').style.color   = isHigh ? '#f87171' : '#34d399';
-
-        const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-        if (aiChart.data.labels.length > 20) {
-            aiChart.data.labels.shift();
-            aiChart.data.datasets[0].data.shift();
-        }
-        aiChart.data.labels.push(time);
-        aiChart.data.datasets[0].data.push(val);
-        aiChart.update();
-    }
-
-    const statusEl = document.getElementById('text_engine_status');
-    if (statusEl) {
-        statusEl.textContent = d.status ?? '--';
-        statusEl.style.color = d.status === 'Danger' ? '#f87171' : '#34d399';
-    }
-}, err => {
-    console.error('[Firebase] ai_analysis error:', err);
-});
-
-// ── 8e. 56214328 logs → sensor chart ────────────────────────────────────
-db.ref('56214328/logs').orderByKey().limitToLast(30).on('value', snap => {
-    const data = snap.val();
-    if (!data) { console.warn('[Firebase] 56214328/logs: no data'); return; }
-    console.log('[Firebase] 56214328/logs updated, entries:', Object.keys(data).length);
-
-    const entries = Object.values(data).sort((a,b) => a.timestamp - b.timestamp);
-    const labels  = entries.map(e => {
-        const d = new Date(e.iso_time);
-        return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    });
-    const mq135 = entries.map(e => e.sensors?.mq135?.norm ?? null);
-    const mq2   = entries.map(e => e.sensors?.mq2?.norm   ?? null);
-    const mq7   = entries.map(e => e.sensors?.mq7?.norm   ?? null);
-
-    sensorChart.data.labels = labels;
-    sensorChart.data.datasets[0].data = mq135;
-    sensorChart.data.datasets[1].data = mq2;
-    sensorChart.data.datasets[2].data = mq7;
-    sensorChart.update();
-}, err => {
-    console.error('[Firebase] 56214328/logs error:', err);
-});
-
-// ── 8f. test_esp32 ───────────────────────────────────────────────────────
+// ── 8d. test_esp32 ───────────────────────────────────────────────────────
 db.ref('test_esp32/latest').on('value', snap => {
     const val = snap.val();
     console.log('[Firebase] test_esp32/latest:', val);
@@ -1087,7 +1090,7 @@ db.ref('test_esp32/latest').on('value', snap => {
     console.error('[Firebase] test_esp32 error:', err);
 });
 
-console.log('[App] All Firebase listeners registered. BuildTech Monitor ready.');
+console.log('[App] All Firebase listeners registered. BuildTech Monitor v2 ready.');
 </script>
 </body>
 </html>
