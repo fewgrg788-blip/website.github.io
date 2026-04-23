@@ -757,6 +757,32 @@ function renderPage1AqhiGrid(record) {
 // 6. WAN CHART UPDATE  (4 bars: realtime + 3h + 6h + 24h)
 // ══════════════════════════════════════════════════════════════════════════
 function updateWANChart() {
+    const stationMap = {
+    "中西區": "Central_Western",
+    "灣仔": "Wan_Chai",
+    "東區": "Eastern",
+    "南區": "Southern",
+    "深水埗": "Sham_Shui_Po",
+    "九龍城": "Kowloon_City",
+    "黃大仙": "Wong_Tai_Sin",
+    "觀塘": "Kwun_Tong",
+    "葵涌": "Kwai_Chung",
+    "荃灣": "Tsuen_Wan",
+    "屯門": "Tuen_Mun",
+    "元朗": "Yuen_Long",
+    "北區": "North",
+    "大埔": "Tai_Po",
+    "沙田": "Sha_Tin",
+    "西貢": "Sai_Kung",
+    "塔門": "Tap_Mun",
+    "銅鑼灣": "Causeway_Bay",
+    "中環": "Central",
+    "旺角": "Mong_Kok",
+    "東涌": "Tung_Chung",
+    "大嶼山": "Lantau",
+    "將軍澳": "Tseung_Kwan_O"
+    };
+    
     const labels  = stations.map(s => s.name);
 
     // Dataset 0: realtime from aqhi_history
@@ -764,9 +790,22 @@ function updateWANChart() {
 
     // Datasets 1/2/3: GAGNN predictions from GAGNN_v3/latest/horizons/{3h|6h|24h}
     // gnn_main writes district keys as the raw DISTRICTS name (e.g. "Central/Western")
-    const pred3hData  = stations.map(s => getPredAqhi(latestPred3h,  s) ?? 0);
-    const pred6hData  = stations.map(s => getPredAqhi(latestPred6h,  s) ?? 0);
-    const pred24hData = stations.map(s => getPredAqhi(latestPred24h, s) ?? 0);
+    // 修改提取預測數據的邏輯 (以 3h 為例)
+    const data3h = wanLabels.map(label => {
+        // 透過映射表將「中西區」轉為 「Central_Western」
+        const dbKey = stationMap[label] || label.replace(/\s+/g, '_').replace(/\//g, '_');
+        return latestPred3h[dbKey] || 0; // 如果找不到數據，預設為 0
+    });
+    
+    const data6h = wanLabels.map(label => {
+        const dbKey = stationMap[label] || label.replace(/\s+/g, '_').replace(/\//g, '_');
+        return latestPred6h[dbKey] || 0;
+    });
+    
+    const data24h = wanLabels.map(label => {
+        const dbKey = stationMap[label] || label.replace(/\s+/g, '_').replace(/\//g, '_');
+        return latestPred24h[dbKey] || 0;
+    });
 
     wanChart.data.labels = labels;
     wanChart.data.datasets[0].data = realData;
