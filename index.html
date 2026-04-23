@@ -960,40 +960,52 @@ db.ref('aqhi_history').orderByKey().limitToLast(1).on('value', snap => {
 //   horizons/6h:  { "Central/Western": 3, "Causeway Bay": 5, ... }
 //   horizons/24h: { "Central/Western": 4, "Causeway Bay": 6, ... }
 //   averages/3h, averages/6h, averages/24h
-db.ref('GAGNN_v3/latest').on('value', snap => {
-    const data = snap.val();
-    if (!data) {
-        console.warn('[Firebase] GAGNN_v3/latest: no data');
+// ── 8b. GAGNN_v3/multi_horizon — 讀取最新的預測數據 ────
+// 路徑：GAGNN_v3/multi_horizon/<最新時間戳>/
+db.ref('GAGNN_v3/multi_horizon').orderByKey().limitToLast(1).on('value', snap => {
+    const multiData = snap.val();
+    if (!multiData) {
+        console.warn('[Firebase] GAGNN_v3/multi_horizon: 找不到數據');
         return;
     }
-    console.log('[Firebase] GAGNN_v3/latest updated:', data);
 
+    // 動態獲取最新的時間戳 Key (例如：2026-04-23_05-05-05)
+    const latestTimeKey = Object.keys(multiData)[0];
+    const data = multiData[latestTimeKey];
+    
+    console.log(`[Firebase] GAGNN_v3/multi_horizon 已更新。最新節點：${latestTimeKey}`, data);
+
+    // 將 horizon 數據映射到現有的變數中
     const horizons = data.horizons || {};
     latestPred3h   = horizons['3h']  || {};
     latestPred6h   = horizons['6h']  || {};
     latestPred24h  = horizons['24h'] || {};
-    latestPredTime = (data.timestamp || '').split(' ')[1] || data.timestamp || '';
+    
+    // 設定預測時間：優先使用 timestamp 欄位，若無則使用節點名稱
+    latestPredTime = data.timestamp ? data.timestamp.split(' ')[1] || data.timestamp : latestTimeKey;
 
-    console.log(`[Firebase] Predictions loaded — ts=${data.timestamp}  `
-        + `3h keys=${Object.keys(latestPred3h).length}  `
-        + `6h keys=${Object.keys(latestPred6h).length}  `
-        + `24h keys=${Object.keys(latestPred24h).length}`);
+    console.log(`[Firebase] 預測數據已載入 — 時間=${latestPredTime}  `
+        + `3h 數量=${Object.keys(latestPred3h).length}  `
+        + `6h 數量=${Object.keys(latestPred6h).length}  `
+        + `24h 數量=${Object.keys(latestPred24h).length}`);
 
+    // 更新 WAN 圖表
     updateWANChart();
 
-    // Alert banner: trigger if 6h city average > 4.2
+    // 觸發警告橫幅：如果 6 小時全港平均值超過 4.2
     const avgs = data.averages || {};
     const avg6h = avgs['6h'] || 0;
     const banner = document.getElementById('alert-banner');
+    
     if (avg6h > 4.2) {
         banner.style.display = 'block';
         banner.innerText = `🚨 GAGNN 警告：預計 ${latestPredTime} 全港 6h AQHI 均值 ${avg6h.toFixed(1)} 級`;
-        console.warn(`[Alert] avg_6h=${avg6h.toFixed(2)} > 4.2 — showing banner`);
+        console.warn(`[Alert] avg_6h=${avg6h.toFixed(2)} > 4.2 — 顯示警告`);
     } else {
         banner.style.display = 'none';
     }
 }, err => {
-    console.error('[Firebase] GAGNN_v3/latest error:', err);
+    console.error('[Firebase] GAGNN_v3/multi_horizon 讀取錯誤:', err);
 });
 
 // ── 8c. LAN Air Monitor — air_monitor/latest/ ────────────────────────────
