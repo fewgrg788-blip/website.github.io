@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -322,7 +322,7 @@
 <body>
 
 <!-- ══ ALERT BANNER ══════════════════════════════════════════════════════ -->
-<div id="alert-banner">🚨 GAGNN 警告：偵測到未來區域性空氣風險偏高</div>
+<div id="alert-banner">🚨 GAGNN WARNING: Elevated regional air risk detected in forecast</div>
 
 <!-- ══════════════════════════════════════════════════════════════════════
      PAGE 1 — SUMMARY DASHBOARD
@@ -331,27 +331,27 @@
     <div class="container">
         <div class="page-header">
             <h1>🏗️ BUILDTECH SMART MONITOR</h1>
-            <span class="live-dot" id="p1-live-status">實時連接中</span>
+            <span class="live-dot" id="p1-live-status">Live Connected</span>
         </div>
 
         <!-- LAN Air Monitor Card — reads from air_monitor/latest/ -->
         <div class="card">
-            <div class="hero-label">LAN · 實時結構風險預測指數 (BuildTech-LAN-GNN)</div>
+            <div class="hero-label">LAN · Real-time Structural Risk Index (BuildTech-LAN-GNN)</div>
             <div class="hero-score-wrap">
                 <!-- risk_score from air_monitor/latest/risk_score -->
                 <div class="hero-score" id="hero_score">---</div>
                 <!-- risk_tag from air_monitor/latest/risk_tag -->
-                <div class="hero-status" id="hero_status">數據連接中...</div>
+                <div class="hero-status" id="hero_status">Connecting...</div>
             </div>
             <div class="info-grid">
                 <!-- temperature from air_monitor/latest/temperature -->
                 <div class="info-item">
-                    <div class="info-label">🌡️ 溫度</div>
+                    <div class="info-label">🌡️ Temperature</div>
                     <div class="info-value"><span id="text_temp">--</span> °C</div>
                 </div>
                 <!-- humidity from air_monitor/latest/humidity -->
                 <div class="info-item">
-                    <div class="info-label">💧 濕度</div>
+                    <div class="info-label">💧 Humidity</div>
                     <div class="info-value"><span id="text_hum">--</span> %</div>
                 </div>
                 <!-- mq135_raw from air_monitor/latest/mq135_raw -->
@@ -371,17 +371,17 @@
                 </div>
                 <!-- air_quality from air_monitor/latest/air_quality -->
                 <div class="info-item">
-                    <div class="info-label">🔬 空氣質素</div>
+                    <div class="info-label">🔬 Air Quality</div>
                     <div class="info-value" id="text_air_quality">--</div>
                 </div>
                 <!-- dew_point from air_monitor/latest/dew_point -->
                 <div class="info-item">
-                    <div class="info-label">🌊 露點溫度</div>
+                    <div class="info-label">🌊 Dew Point</div>
                     <div class="info-value"><span id="text_dew_point">--</span> °C</div>
                 </div>
                 <!-- heat_index from air_monitor/latest/heat_index -->
                 <div class="info-item">
-                    <div class="info-label">🔥 熱指數</div>
+                    <div class="info-label">🔥 Heat Index</div>
                     <div class="info-value"><span id="text_heat_index">--</span> °C</div>
                 </div>
             </div>
@@ -396,8 +396,8 @@
         <!-- WAN AQHI Summary -->
         <div class="card">
             <div class="chart-header">
-                <h4>🌏 WAN · 全港 18區 AQHI 即時摘要</h4>
-                <span class="data-tag" id="p1-aqhi-time">載入中...</span>
+                <h4>🌏 WAN · HK 18 Districts AQHI Live Summary</h4>
+                <span class="data-tag" id="p1-aqhi-time">Loading...</span>
             </div>
             <div class="stats-row" id="p1-aqhi-grid">
                 <!-- populated by JS from aqhi_history/latest -->
@@ -407,17 +407,17 @@
         <!-- test_esp32 status -->
         <div class="card">
             <div class="chart-header">
-                <h4>📡 ESP32 節點狀態</h4>
+                <h4>📡 ESP32 Node Status</h4>
                 <span class="live-dot">test_esp32</span>
             </div>
             <div class="esp32-status-row">
-                <div class="esp-badge">最新封包：<span id="p1-esp32-msg">載入中...</span></div>
+                <div class="esp-badge">Latest Packet: <span id="p1-esp32-msg">Loading...</span></div>
             </div>
         </div>
 
         <div class="btn-group">
-            <button class="btn" onclick="showPage(3)">🗺️ 18區 3D 數位分身</button>
-            <button class="btn btn-ghost" onclick="showPage(2)">📊 WAN / LAN 深度趨勢</button>
+            <button class="btn" onclick="showPage(3)">🗺️ 18 Districts 3D Digital Twin</button>
+            <button class="btn btn-ghost" onclick="showPage(2)">📊 WAN / LAN Deep Trend Analysis</button>
         </div>
     </div>
 </div>
@@ -428,8 +428,8 @@
 <div id="page2" class="page">
     <div class="container">
         <div class="page-header">
-            <button class="btn btn-ghost" onclick="showPage(1)">← 返回摘要</button>
-            <span class="live-dot" id="p2-update-time">更新中...</span>
+            <button class="btn btn-ghost" onclick="showPage(1)">← Back to Summary</button>
+            <span class="live-dot" id="p2-update-time">Updating...</span>
         </div>
 
         <!--
@@ -442,7 +442,7 @@
         -->
         <div class="card">
             <div class="chart-header">
-                <h4>🗺️ 18區 AQHI — 即時 vs GAGNN 3h / 6h / 24h 預測 (WAN · Firebase)</h4>
+                <h4>🗺️ 18 Districts AQHI — Realtime vs GAGNN 3h / 6h / 24h Forecast (WAN · Firebase)</h4>
                 <span class="data-tag">GAGNN_v3 / latest</span>
             </div>
             <div style="height:340px;"><canvas id="wanChart"></canvas></div>
@@ -457,7 +457,7 @@
         -->
         <div class="card">
             <div class="chart-header">
-                <h4>🔬 LAN 感應器歷史記錄 (MQ-135 / MQ-2 / MQ-7)</h4>
+                <h4>🔬 LAN Sensor History (MQ-135 / MQ-2 / MQ-7)</h4>
                 <span class="data-tag">air_monitor / latest</span>
             </div>
             <div style="height:220px;"><canvas id="sensorChart"></canvas></div>
@@ -471,10 +471,10 @@
 <div id="page3" class="page" style="overflow:hidden; padding-top:14px;">
     <div class="container" style="height:100%;">
         <div class="map-topbar">
-            <button class="btn btn-ghost" onclick="showPage(1)">← 返回</button>
+            <button class="btn btn-ghost" onclick="showPage(1)">← Back</button>
             <div style="text-align:right;">
-                <div class="live-dot" id="map-live-label">實時同步 aqhi_history</div>
-                <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--muted); margin-top:3px;" id="last_update_time">數據加載中...</div>
+                <div class="live-dot" id="map-live-label">Live Sync aqhi_history</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--muted); margin-top:3px;" id="last_update_time">Loading data...</div>
             </div>
         </div>
 
@@ -484,18 +484,18 @@
             <div id="map-info-panel">
                 <h5 id="panel-name">—</h5>
                 <div class="panel-row">AQHI <span id="panel-aqhi">--</span></div>
-                <div class="panel-row">濕度 <span id="panel-hum">-- %</span></div>
-                <div class="panel-row">風向 <span id="panel-wdir">--°</span></div>
-                <div class="panel-row">風速 <span id="panel-wspd">-- km/h</span></div>
-                <div class="panel-row">颱風 <span id="panel-cyclone">--</span></div>
+                <div class="panel-row">Humidity <span id="panel-hum">-- %</span></div>
+                <div class="panel-row">Wind Dir <span id="panel-wdir">--°</span></div>
+                <div class="panel-row">Wind Speed <span id="panel-wspd">-- km/h</span></div>
+                <div class="panel-row">Typhoon <span id="panel-cyclone">--</span></div>
             </div>
 
             <div class="wind-badge" id="wind-badge">
-                <div class="title">🌬️ 全港平均氣象</div>
-                <div>濕度：<span id="avg-hum" style="color:var(--blue);">--</span> %</div>
-                <div>風速：<span id="avg-wspd" style="color:var(--blue);">--</span> km/h</div>
-                <div>颱風：<span id="avg-cyclone" style="color:var(--amber);">--</span></div>
-                <div>數據時間：<span id="data-date" style="color:var(--green);">--</span></div>
+                <div class="title">🌬️ HK Average Weather</div>
+                <div>Humidity: <span id="avg-hum" style="color:var(--blue);">--</span> %</div>
+                <div>Wind Speed: <span id="avg-wspd" style="color:var(--blue);">--</span> km/h</div>
+                <div>Typhoon: <span id="avg-cyclone" style="color:var(--amber);">--</span></div>
+                <div>Data Time: <span id="data-date" style="color:var(--green);">--</span></div>
             </div>
 
             <div id="cesiumContainer"></div>
@@ -653,7 +653,7 @@ const wanChart = new Chart(document.getElementById('wanChart'), {
         labels: [],
         datasets: [
             {
-                label: '即時 AQHI',
+                label: 'Realtime AQHI',
                 data: [],
                 // colour-mapped per bar based on AQHI level
                 backgroundColor: ctx => {
@@ -894,7 +894,7 @@ function updateCesiumMarkers() {
 
     document.getElementById('avg-hum').textContent     = avgHum  !== null ? avgHum.toFixed(0)  : '--';
     document.getElementById('avg-wspd').textContent    = avgWspd !== null ? avgWspd.toFixed(1) : '--';
-    document.getElementById('avg-cyclone').textContent = record.Cyclone_Present ? '⚠️ 是' : '否';
+    document.getElementById('avg-cyclone').textContent = record.Cyclone_Present ? '⚠️ Yes' : 'No';
     document.getElementById('data-date').textContent   = record.Date || '--';
 
     stations.forEach(s => {
@@ -914,9 +914,9 @@ function updateCesiumMarkers() {
         const labelText =
             `${s.name}\n` +
             `AQHI: ${aqhi ?? '--'}\n` +
-            `濕度: ${hum  !== null ? hum.toFixed(0)+'%'     : '--'}\n` +
-            `風向: ${wdir !== null ? wdir.toFixed(0)+'° '+wdirLabel : '--'}\n` +
-            `風速: ${wspd !== null ? wspd.toFixed(1)+' km/h': '--'}`;
+            `Humidity: ${hum  !== null ? hum.toFixed(0)+'%'     : '--'}\n` +
+            `Wind Dir: ${wdir !== null ? wdir.toFixed(0)+'° '+wdirLabel : '--'}\n` +
+            `Wind Speed: ${wspd !== null ? wspd.toFixed(1)+' km/h': '--'}`;
 
         if (stationEntities[s.name]) {
             const ent = stationEntities[s.name];
@@ -963,7 +963,7 @@ function showStationPanel(s) {
     document.getElementById('panel-hum').textContent      = hum  !== null ? hum.toFixed(0)+'%'     : '--';
     document.getElementById('panel-wdir').textContent     = wdir !== null ? wdir.toFixed(0)+'° '+degToCompass(wdir) : '--';
     document.getElementById('panel-wspd').textContent     = wspd !== null ? wspd.toFixed(1)+' km/h': '--';
-    document.getElementById('panel-cyclone').textContent  = record.Cyclone_Present ? '⚠️ 是' : '否';
+    document.getElementById('panel-cyclone').textContent  = record.Cyclone_Present ? '⚠️ Yes' : 'No';
     document.getElementById('map-info-panel').classList.add('visible');
     console.log(`[Panel] Showing info for: ${s.name}`);
 }
@@ -987,7 +987,7 @@ db.ref('aqhi_history').orderByKey().limitToLast(1).on('value', snap => {
     const timeStr = latestAqhiRecord.Date || timeKey;
     const el  = document.getElementById('last_update_time');
     const p2el = document.getElementById('p2-update-time');
-    if (el)   el.textContent  = `數據時間：${timeStr}`;
+    if (el)   el.textContent  = `Data Time: ${timeStr}`;
     if (p2el) p2el.textContent = timeStr;
 
     renderPage1AqhiGrid(latestAqhiRecord);
@@ -1043,7 +1043,7 @@ db.ref('GAGNN_v3/multi_horizon').orderByKey().limitToLast(1).on('value', snap =>
     
     if (avg6h > 4.2) {
         banner.style.display = 'block';
-        banner.innerText = `🚨 GAGNN 警告：預計 ${latestPredTime} 全港 6h AQHI 均值 ${avg6h.toFixed(1)} 級`;
+        banner.innerText = `🚨 GAGNN WARNING: Forecast ${latestPredTime} HK-wide 6h AQHI avg ${avg6h.toFixed(1)}`;
         console.warn(`[Alert] avg_6h=${avg6h.toFixed(2)} > 4.2 — 顯示警告`);
     } else {
         banner.style.display = 'none';
@@ -1107,7 +1107,7 @@ db.ref('air_monitor/latest').on('value', snap => {
     }
 
     // live-dot label
-    document.getElementById('p1-live-status').textContent = '實時連接';
+    document.getElementById('p1-live-status').textContent = 'Live Connected';
 
     // ── Sensor rolling chart ─────────────────────────────────────────────
     // Push each update into rolling buffer (max SENSOR_MAX points)
@@ -1133,7 +1133,7 @@ db.ref('air_monitor/latest').on('value', snap => {
     console.log(`[SensorChart] Updated — MQ135=${d.mq135_raw} MQ2=${d.mq2_raw} MQ7=${d.mq7_raw}  buffer=${sensorBuffer.labels.length}`);
 }, err => {
     console.error('[Firebase] air_monitor/latest error:', err);
-    document.getElementById('p1-live-status').textContent = '連接失敗';
+    document.getElementById('p1-live-status').textContent = 'Connection Failed';
 });
 
 // ── 8d. test_esp32 ───────────────────────────────────────────────────────
@@ -1141,7 +1141,7 @@ db.ref('test_esp32/latest').on('value', snap => {
     const val = snap.val();
     console.log('[Firebase] test_esp32/latest:', val);
     const el = document.getElementById('p1-esp32-msg');
-    if (el) el.textContent = val ?? '(無數據)';
+    if (el) el.textContent = val ?? '(No Data)';
 }, err => {
     console.error('[Firebase] test_esp32 error:', err);
 });
